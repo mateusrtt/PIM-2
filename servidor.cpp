@@ -1,6 +1,7 @@
 #include<iostream>
 #include<winsock2.h>
 #include<ws2tcpip.h>
+#include <fstream> 
 #pragma comment(lib,"ws2_32.lib")
 #define PORT 8080 
 using namespace std;
@@ -49,5 +50,43 @@ int main(){
 
      cout << "Servidor em execução. Aguardando conexões..." << endl; 
 
+     while(true){
+        new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+        if (new_socket == INVALID_SOCKET) {
+            cerr << "Erro ao aceitar a conexão: " << WSAGetLastError() << endl;
+             closesocket(server_fd);
+             WSACleanup();
+             return -1;
+        }
+
+         char buffer[1024] = {0};
+         int valread = recv(new_socket, buffer, sizeof(buffer) - 1, 0);
+         
+         if (valread > 0) {  // Verifique se a leitura foi bem-sucedida
+        string registro(buffer); 
+
+        cout << "Registro recebido: " << registro << endl; 
+
+        if (!registro.empty()) {
+            ofstream arquivo("vendas.txt", ios::app); 
+            if (arquivo.is_open()) {
+                arquivo << registro << endl; 
+                arquivo << "====================================" << endl;
+                arquivo.close();
+            } else {
+                cerr << "Erro ao abrir o arquivo de vendas." << endl;
+            }
+        } else {
+            cerr << "Registro vazio, não será gravado." << endl;
+        }
+
+        cout << "Compra registrada: " << registro << endl;
+    } else {
+        cerr << "Erro ao ler os dados do cliente" << endl;
+    }
+        closesocket(new_socket);
+    }
+
 return 0;
+
 }
