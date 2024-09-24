@@ -59,6 +59,8 @@ int main(){
              return -1;
         }
 
+        cout << "Conexão estabelecida com o cliente!" << endl;
+
          char buffer[1024] = {0};
          int valread = recv(new_socket, buffer, sizeof(buffer) - 1, 0);
          

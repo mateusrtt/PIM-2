@@ -37,6 +37,8 @@ int main(){
         return -1;
     }
 
+    cout << "Conectado ao servidor com sucesso!" << endl;
+
 return 0;
 
 }
