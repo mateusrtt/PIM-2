@@ -5,8 +5,15 @@
 #define PORT 8080
 using namespace std;
 
-int main(){
+int conectarServidor(int sock){
+     struct sockaddr_in serv_addr;
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    return connect(sock, (sockaddr*)&serv_addr, sizeof(serv_addr));
+}
 
+int iniciarEConectarSocket() {
     // Inicia o Winsock
     WSADATA wsaData;
     if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0){
@@ -22,23 +29,25 @@ int main(){
         return -1;
     }
 
-    // Configuração do servidor
-    struct sockaddr_in serv_addr;
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-
     // Tentativa de conexão com o servidor
-    if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0){
+    if (conectarServidor(sock) < 0){
         cerr << "Erro ao conectar ao servidor" << endl;
         cerr << "Código de erro: " << WSAGetLastError() << endl;
         closesocket(sock);
         WSACleanup();
         return -1;
     }
+}
 
-    cout << "Conectado ao servidor com sucesso!" << endl;
+int main(){
+    int sock = iniciarEConectarSocket();
+     if (sock < 0){
+        return 1;
+     }
 
+    
+closesocket(sock);
+WSACleanup();
 return 0;
 
 }
