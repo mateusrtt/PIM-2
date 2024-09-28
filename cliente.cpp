@@ -38,9 +38,12 @@ int iniciarEConectarSocket() {
         WSACleanup();
         return -1;
     }
+    return sock; 
 }
 
-void lerProduto();
+void lerProduto(){
+
+};
 
 void menuPrincipal() {
     system("cls");
@@ -72,6 +75,8 @@ int main(){
      if (sock < 0){
         return 1;
      }
+
+     menuPrincipal();
 
     
 closesocket(sock);
