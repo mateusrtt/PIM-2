@@ -1,2 +1,3 @@
 *.exe
-cliente
+cliente.cpp
+servidor.cpp
