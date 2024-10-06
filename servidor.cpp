@@ -1,11 +1,10 @@
-#include <iostream> // Inclui a biblioteca de entrada e saída padrão do C++
+#include <iostream> 
 #include <cstring> // Inclui a biblioteca para manipulação de strings e arrays
 #include <winsock2.h> // Inclui a biblioteca para uso de sockets no Windows
 #pragma comment(lib, "ws2_32.lib") // Indica ao linker para usar a biblioteca ws2_32.lib para Winsock
-
 #define MAX_PRODUTOS 5 // Define o número máximo de produtos no estoque
 #define PORTA 12345 // Define a porta que o servidor irá utilizar
-using namespace std; // Usa o espaço de nomes padrão, permitindo acesso a classes e funções sem prefixo
+using namespace std; 
 
 // Estrutura para representar um produto
 struct Produto {
