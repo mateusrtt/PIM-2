@@ -1,5 +1,5 @@
-Banana       - R$ 2.50 por kg - Quantidade: 27.00 kg
-Maçã       - R$ 3.00 por kg - Quantidade: 35.00 kg
-Laranja       - R$ 1.80 por kg - Quantidade: 39.00 kg
-Morango       - R$ 6.00 por kg - Quantidade: 98.60 kg
-Melancia       - R$ 12.00 por kg - Quantidade: 89.00 kg
+Banana           - R$ 2.50 por kg - Quantidade: 19.00 kg
+Maçã           - R$ 3.00 por kg - Quantidade: 35.00 kg
+Laranja           - R$ 1.80 por kg - Quantidade: 39.00 kg
+Morango           - R$ 6.00 por kg - Quantidade: 98.60 kg
+Melancia           - R$ 12.00 por kg - Quantidade: 89.00 kg
