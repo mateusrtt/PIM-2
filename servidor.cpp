@@ -31,7 +31,7 @@ void carregarEstoque() {
 
     produtos.clear();  // Limpa o vetor para recarregar
     Produto temp;
-    char linhaBuffer[200];  // Buffer temporário para a linha
+    char linhaBuffer[300];  // Buffer temporário para a linha
 
     while (fgets(linhaBuffer, sizeof(linhaBuffer), arquivo)) {
         linhaBuffer[strcspn(linhaBuffer, "\n")] = 0; 
@@ -39,7 +39,7 @@ void carregarEstoque() {
         cout << "Lendo linha: " << linhaBuffer << endl;
 
         char nome[50]; // buffer temporário para o nome
-        if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - Quantidade: %f kg", 
+        if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - R$ %f por unidade - Quantidade: %f kg - Quantidade Unidades: %d",
             nome, &temp.precoPorKg, &temp.precoPorUnidade, &temp.quantidadeKg, &temp.quantidadeUnidade) == 5) {
             temp.nome = nome; // Copia o nome para o objeto Produto
             produtos.push_back(temp);
