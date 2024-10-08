@@ -13,7 +13,9 @@ using namespace std;
 struct Produto {
     string nome; // Nome do produto (até 50 caracteres)
     float precoPorKg; // Preço por quilograma do produto
-    float quantidade; // Quantidade disponível do produto
+    float precoPorUnidade; // Preço por unidade do produto
+    float quantidadeKg; // Quantidade disponível em kg
+    int quantidadeUnidade; // Quantidade disponível em unidades
 };
 
 // Declaração do vetor de produtos
@@ -38,8 +40,8 @@ void carregarEstoque() {
 
         char nome[50]; // buffer temporário para o nome
         if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - Quantidade: %f kg", 
-                nome, &temp.precoPorKg, &temp.quantidade) == 3) {
-                temp.nome = nome; // Copia o nome para o objeto Produto
+            nome, &temp.precoPorKg, &temp.precoPorUnidade, &temp.quantidadeKg, &temp.quantidadeUnidade) == 5) {
+            temp.nome = nome; // Copia o nome para o objeto Produto
             produtos.push_back(temp);
         } else {
             cout << "Falha ao analisar a linha: " << linhaBuffer << endl;
@@ -58,8 +60,8 @@ void salvarEstoque() {
         return; // Retorna da função se falhar
     }
     for (const auto& produto : produtos) {
-        fprintf(arquivo, "%s - R$ %.2f por kg - Quantidade: %.2f kg\n", 
-                produto.nome.c_str(), produto.precoPorKg, produto.quantidade);
+        fprintf(arquivo, "%s - R$ %.2f por kg - R$ %.2f por unidade - Quantidade: %.2f kg - Quantidade Unidades: %d\n",
+                produto.nome.c_str(), produto.precoPorKg, produto.precoPorUnidade, produto.quantidadeKg, produto.quantidadeUnidade);
     }
     fclose(arquivo); // Fecha o arquivo
 }
@@ -81,19 +83,29 @@ void enviarProdutos(SOCKET clienteSocket) {
         send(clienteSocket, (char*)&nomeTamanho, sizeof(nomeTamanho), 0);
         send(clienteSocket, produto.nome.c_str(), nomeTamanho, 0);
         send(clienteSocket, (char*)&produto.precoPorKg, sizeof(produto.precoPorKg), 0);
-        send(clienteSocket, (char*)&produto.quantidade, sizeof(produto.quantidade), 0);
+        send(clienteSocket, (char*)&produto.quantidadeKg, sizeof(produto.quantidadeKg), 0);
+        send(clienteSocket, (char*)&produto.precoPorUnidade, sizeof(produto.precoPorUnidade), 0);
+        send(clienteSocket, (char*)&produto.quantidadeUnidade, sizeof(produto.quantidadeUnidade), 0);
     }
 }
 
 // Função para atualizar a quantidade do produto
-void atualizarQuantidade(int index, float quantidade) {
+void atualizarQuantidade(int index, float quantidade, bool porUnidade) {
     if (index >= 0 && index < produtos.size()) {
-        if (produtos[index].quantidade >= quantidade) {
-            cout << "Atualizando produto " << index << ": " << produtos[index].nome << ", quantidade a subtrair: " << quantidade << "\n";
-            produtos[index].quantidade -= quantidade;
-            salvarEstoque();
+              if (porUnidade) {
+            if (produtos[index].quantidadeUnidade >= quantidade) {
+                produtos[index].quantidadeUnidade -= quantidade;
+                cout << "Produto " << produtos[index].nome << " atualizado: - " << quantidade << " unidade(s).\n";
+            } else {
+                cout << "Quantidade insuficiente para o produto: " << produtos[index].nome << "\n";
+            }
         } else {
-            cout << "Quantidade insuficiente para o produto: " << produtos[index].nome << "\n";
+            if (produtos[index].quantidadeKg >= quantidade) {
+                produtos[index].quantidadeKg -= quantidade;
+                cout << "Produto " << produtos[index].nome << " atualizado: - " << quantidade << " kg.\n";
+            } else {
+                cout << "Quantidade insuficiente para o produto: " << produtos[index].nome << "\n";
+            }
         }
     } else {
         cout << "Índice inválido: " << index << "\n";
@@ -159,6 +171,7 @@ void processarConexao(SOCKET clienteSocket) {
     int index; // Variável para armazenar o índice do produto
     float quantidade; // Variável para armazenar a quantidade do produto
     int bytesRecebidos; // Variável para armazenar a quantidade de bytes recebidos
+    bool porUnidade; // Indica se a compra é por unidade
 
     enviarProdutos(clienteSocket); // Envia a lista de produtos para o cliente
 
@@ -175,13 +188,23 @@ void processarConexao(SOCKET clienteSocket) {
 
         index--;  // Ajusta o índice para o array (começando em 0)
 
-        // Receber a quantidade do produto
-        bytesRecebidos = recv(clienteSocket, (char*)&quantidade, sizeof(quantidade), 0); // Recebe a quantidade do produto
-        if (bytesRecebidos == SOCKET_ERROR) { // Verifica se ocorreu erro na recepção
-            cout << "Erro ao receber quantidade. Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
+               // Receber a quantidade do produto (por unidade)
+        bytesRecebidos = recv(clienteSocket, (char*)&quantidade, sizeof(quantidade), 0);
+        if (bytesRecebidos == SOCKET_ERROR) {
+            cout << "Erro ao receber quantidade. Código de erro: " << WSAGetLastError() << "\n";
             break; // Sai do loop em caso de erro
-        } else if (bytesRecebidos == 0) { // Verifica se a conexão foi encerrada
-            cout << "Conexão encerrada pelo cliente.\n"; // Mensagem de encerramento
+        } else if (bytesRecebidos == 0) {
+            cout << "Conexão encerrada pelo cliente.\n";
+            break; // Sai do loop
+        }
+
+        // Receber se a compra é por unidade
+        bytesRecebidos = recv(clienteSocket, (char*)&porUnidade, sizeof(porUnidade), 0);
+        if (bytesRecebidos == SOCKET_ERROR) {
+            cout << "Erro ao receber informação de tipo de compra. Código de erro: " << WSAGetLastError() << "\n";
+            break; // Sai do loop em caso de erro
+        } else if (bytesRecebidos == 0) {
+            cout << "Conexão encerrada pelo cliente.\n";
             break; // Sai do loop
         }
 
@@ -189,7 +212,24 @@ void processarConexao(SOCKET clienteSocket) {
             break; // Termina a conexão
         }
 
-        atualizarQuantidade(index, quantidade); // Atualiza a quantidade do produto
+        // Armazena o estado anterior
+        float quantidadeAnteriorKg = produtos[index].quantidadeKg;
+        int quantidadeAnteriorUnidade = produtos[index].quantidadeUnidade; // Manter como int
+
+        // Tenta atualizar a quantidade do produto
+        atualizarQuantidade(index, (float)quantidade, porUnidade); // Chama a função sem esperar retorno, convertendo quantidade para float se necessário
+
+        // Verifica se a atualização foi bem-sucedida por meio de mensagens já impressas
+        if (produtos[index].quantidadeKg == quantidadeAnteriorKg && produtos[index].quantidadeUnidade == quantidadeAnteriorUnidade) {
+            // Restaura o estoque se houve falha
+            produtos[index].quantidadeKg = quantidadeAnteriorKg;
+            produtos[index].quantidadeUnidade = quantidadeAnteriorUnidade;
+            salvarEstoque(); // Salva o estoque restaurado
+            cout << "Operação cancelada. Estoque restaurado.\n";
+        } else {
+            salvarEstoque(); // Salva o estoque atualizado
+            cout << "Compra realizada com sucesso!\n";
+        }
     }
 }
 
