@@ -20,32 +20,6 @@ struct Produto {
 vector<Produto> produtos;  // Vetor para armazenar os produtos do arquivo
 vector<Produto> estoqueOriginal;  // Cópia do estoque inicial
 
-void carregarProdutos(const string& filename) {
-    ifstream file(filename);
-    if (!file.is_open()) {
-        cerr << "Erro ao abrir o arquivo: " << filename << endl;
-        return;
-    }
-
-    string linha;
-    while (getline(file, linha)) {
-        Produto produto;
-        istringstream iss(linha);
-        string precoStr, quantidadeStr;
-
-        // Ignora o número do produto
-        getline(iss, produto.nome, '-');
-        iss >> precoStr; // Pega "R$" e o preço
-        iss >> produto.precoPorKg; // Lê o preço
-        iss.ignore(256, ' '); // Ignora "por kg"
-        iss >> quantidadeStr; // Lê "Quantidade" e o valor
-        iss >> produto.quantidade;
-
-        produtos.push_back(produto);
-    }
-    file.close();
-}
-
 void carregarEstoque() {
     FILE *arquivo = fopen("estoque.txt", "r"); // Abre o arquivo estoque.txt em modo de leitura
     if (arquivo == nullptr) { // Verifica se o arquivo foi aberto corretamente
