@@ -1,4 +1,3 @@
 *.exe
 cliente.cpp
 servidor.cpp
-estoque.txt
