@@ -1,193 +1,452 @@
-#include <iostream>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <limits>
-#include <algorithm>
+#include <iostream> 
+#include <cstring> // Inclui funções para manipulação de strings
+#include <winsock2.h> // Inclui a biblioteca Winsock para comunicação em rede no Windows
+#include <ctime> // Inclui funções para manipulação de data e hora
 #include <iomanip>
-#pragma comment(lib, "ws2_32.lib")
-#define PORT 8080
-using namespace std;
+#include <fstream>
+#include <cctype> // Inclui funções para verificar tipos de caracteres, como isdigit
+#include <algorithm> // Inclui algoritmos da STL, como std::all_of
+#include <vector>
+#pragma comment(lib, "ws2_32.lib") // Especifica a biblioteca a ser ligada
+#define PORTA 12345 // Define a porta para conexão
+using namespace std; 
 
+// Estrutura que representa um produto
+struct Produto {
+    string nome; // Nome do produto
+    float precoPorKg; // Preço por quilo do produto
+    float precoPorUnidade; // Preço por unidade do produto
+    float quantidadeKg; // Quantidade disponível em kg
+    int quantidadeUnidade; // Quantidade disponível em unidades
+};
 
+vector<Produto> produtos; // Usando vector para gerenciar a lista de produtos
+vector<Produto> estoqueOriginal; // Estoque original para restauração
+
+// Função para inicializar o socket
+SOCKET inicializarSocket() {
+    WSADATA wsaData; // Estrutura para armazenar dados de inicialização
+    SOCKET clienteSocket; // Variável para o socket do cliente
+
+    // Inicializa a Winsock
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) {
+        cout << "Falha ao inicializar Winsock. Codigo de erro: " << WSAGetLastError() << "\n";
+        exit(1); // Encerra o programa se falhar
+    }
+
+    // Cria um socket TCP
+    clienteSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if (clienteSocket == INVALID_SOCKET) {
+        cout << "Erro ao criar o socket. Codigo de erro: " << WSAGetLastError() << "\n";
+        WSACleanup(); // Limpa a Winsock
+        exit(1); // Encerra o programa se falhar
+    }
+
+    return clienteSocket; // Retorna o socket criado
+}
+
+// Função para verificar se a entrada é um número inteiro válido
 bool isValidInteger(const string& input) {
-    // Verifica se todos os caracteres da string são dígitos
-    return all_of(input.begin(), input.end(), ::isdigit);
+    return all_of(input.begin(), input.end(), ::isdigit); // Verifica se todos os caracteres são dígitos
 }
 
-int conectarServidor(int sock){
-    struct sockaddr_in serv_addr;
-    serv_addr.sin_family = AF_INET;
-    serv_addr.sin_port = htons(PORT);
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    return connect(sock, (sockaddr*)&serv_addr, sizeof(serv_addr));
+// Função para conectar ao servidor
+void conectarServidor(SOCKET clienteSocket, struct sockaddr_in& servidorAddr) {
+    servidorAddr.sin_family = AF_INET; // Define a família de endereços
+    servidorAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); // IP do servidor (localhost)
+    servidorAddr.sin_port = htons(PORTA); // Porta do servidor
+
+    // Tenta conectar ao servidor
+    cout << "Tentando conectar ao servidor...\n";
+    if (connect(clienteSocket, (struct sockaddr*)&servidorAddr, sizeof(servidorAddr)) == SOCKET_ERROR) {
+        cout << "Erro ao conectar ao servidor. Codigo de erro: " << WSAGetLastError() << "\n";
+        closesocket(clienteSocket); // Fecha o socket em caso de erro
+        WSACleanup(); // Limpa a Winsock
+        exit(1); // Encerra o programa
+    }
+
+    cout << "Conectado ao servidor.\n"; // Mensagem de conexão bem-sucedida
 }
 
-int iniciarEConectarSocket() {
-    // Inicia o Winsock
-    WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0){
-        cerr << "Erro ao inicializar o Winsock" << endl;
-        return -1;
-    }
+// Função para limpar a tela do console
+void limparTela() {
+#ifdef _WIN32
+    system("cls"); // Comando para Windows
+#else
+    system("clear"); // Comando para Unix/Linux
+#endif
+}
 
-    // Criação do socket
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock < 0) {
-        cerr << "Erro ao criar socket" << endl;
-        WSACleanup(); 
-        return -1;
-    }
-
-    // Tentativa de conexão com o servidor
-    if (conectarServidor(sock) < 0){
-        cerr << "Erro ao conectar ao servidor" << endl;
-        cerr << "Código de erro: " << WSAGetLastError() << endl;
-        closesocket(sock);
+// Função para receber produtos do servidor
+void receberProdutos(SOCKET clienteSocket) {
+    int numeroDeProdutos;
+    if (recv(clienteSocket, (char*)&numeroDeProdutos, sizeof(int), 0) == SOCKET_ERROR) {
+        cout << "Erro ao receber dados do servidor. Codigo de erro: " << WSAGetLastError() << "\n";
+        closesocket(clienteSocket);
         WSACleanup();
-        return -1;
+        exit(1);
     }
-    return sock; 
+
+    for (int i = 0; i < numeroDeProdutos; i++) {
+        Produto produto;
+
+        // Recebe nome do produto
+        int nomeTamanho;
+        if (recv(clienteSocket, (char*)&nomeTamanho, sizeof(nomeTamanho), 0) == SOCKET_ERROR) {
+            cout << "Erro ao receber o tamanho do nome do produto. Código de erro: " << WSAGetLastError() << "\n";
+            closesocket(clienteSocket);
+            WSACleanup();
+            exit(1);
+        }
+       
+        // Usando std::string para gerenciar a memória
+        char* nomeBuffer = new char[nomeTamanho + 1];
+        if (recv(clienteSocket, nomeBuffer, nomeTamanho, 0) == SOCKET_ERROR) {
+            cout << "Erro ao receber o nome do produto. Código de erro: " << WSAGetLastError() << "\n";
+            delete[] nomeBuffer;
+            closesocket(clienteSocket);
+            WSACleanup();
+            exit(1);
+        }
+        nomeBuffer[nomeTamanho] = '\0'; // Adiciona o terminador de string
+        produto.nome = string(nomeBuffer);
+        delete[] nomeBuffer;
+
+        // Recebe preço e quantidade
+        if (recv(clienteSocket, (char*)&produto.precoPorKg, sizeof(produto.precoPorKg), 0) == SOCKET_ERROR ||
+            recv(clienteSocket, (char*)&produto.quantidadeKg, sizeof(produto.quantidadeKg), 0) == SOCKET_ERROR ||
+            recv(clienteSocket, (char*)&produto.precoPorUnidade, sizeof(produto.precoPorUnidade), 0) == SOCKET_ERROR ||
+            recv(clienteSocket, (char*)&produto.quantidadeUnidade, sizeof(int), 0) == SOCKET_ERROR) {
+            cout << "Erro ao receber dados do servidor. Código de erro: " << WSAGetLastError() << "\n";
+            closesocket(clienteSocket);
+            WSACleanup();
+            exit(1);
+        }
+
+        produtos.push_back(produto);
+        estoqueOriginal.push_back(produto); // Copia para o estoque original
+    }
+
+    // Exibe os produtos
+    cout << fixed << setprecision(2);
+     for (size_t i = 0; i < produtos.size(); i++) {
+        cout << i + 1 << ". " << produtos[i].nome 
+             << " - R$ " << produtos[i].precoPorKg << " por kg - R$ " 
+             << produtos[i].precoPorUnidade << " por unidade - Quantidade: " 
+             << produtos[i].quantidadeKg << " kg - Quantidade Unidades: " 
+             << produtos[i].quantidadeUnidade << " unidades\n";
+    }
 }
 
-int menuPrincipal() {
-    system("cls");
-    int opcao;
-    cout << "========================\n";
-    cout << "    CAIXA HORTIFRUTI    \n";
-    cout << "========================\n";
-    cout << "1 - Ler produto\n";
-    cout << "2 - Cancelar compra\n";
-    cout << "========================\n";
+// Função para exibir o menu de produtos
+void exibirMenu() {
+    limparTela();
+    cout << "=====================================================================================================\n";
+    cout << "                                     SELECIONE OS PRODUTOS                                           \n";
+    cout << "=====================================================================================================\n";
+    cout << fixed << setprecision(2);
+    for (size_t i = 0; i < produtos.size(); i++) {
+         cout << i + 1 << ". " << produtos[i].nome 
+             << " - R$ " << produtos[i].precoPorKg << " por kg - R$ " 
+             << produtos[i].precoPorUnidade << " por unidade - Quantidade: " 
+             << produtos[i].quantidadeKg << " kg - Quantidade Unidades: " 
+             << produtos[i].quantidadeUnidade << " unidades\n";
+    }
+    cout << "=====================================================================================================\n";
+    cout << "Digite o numero do produto (ou 0 para cancelar): ";
+}
+
+// Função para obter a data e hora formatada
+void obterDataHora(char *buffer, size_t tamanho) {
+    time_t t; // Variável para armazenar o tempo atual
+    struct tm *tm_info; // Estrutura para armazenar informações da data/hora
+
+    time(&t); // Obtém o tempo atual
+    tm_info = localtime(&t); // Converte para a hora local
+    strftime(buffer, tamanho, "%d/%m/%Y %H:%M:%S", tm_info); // Formata a data/hora
+}
+
+// Função para calcular desconto
+float calcularDesconto(float total, int metodoPagamento) {
+    return (metodoPagamento == 1) ? (total * 0.10) : 0; // 10% de desconto para Pix
+}
+
+// Função para selecionar o método de pagamento
+int selecionarMetodoPagamento() {
+    limparTela(); // Limpa a tela
+    int opcao; // Variável para armazenar a opção selecionada
+    cout << "==============================================\n";
+    cout << "              TIPO DE PAGAMENTO               \n";
+    cout << "==============================================\n";
+    cout << "1. Pix (10%% de desconto)\n";
+    cout << "2. Cartão de Crédito (sem desconto)\n";
+    cout << "==============================================\n";
     cout << "Escolha uma opcao: ";
 
-    string verificaOpcao; //Variável para armazenar a entrada do tipo de produto
-    while (true) {  // Valida a entrada do tipo de produto
-        cin >>verificaOpcao; //Lê a entrada do usuário
-        if (isValidInteger(verificaOpcao)) { // Verifica se a entrada é um número inteiro
-        opcao = stoi(verificaOpcao); // Converte a string para inteiro
-        if (opcao == 1 || opcao == 2) break;// Aceita apenas opções 1 ou 2
+    string verificaOpcao; // Variável para armazenar a entrada do usuário
+    while (true) {  // Loop para validar a entrada
+        cin >> verificaOpcao; // Lê a entrada
+        if (isValidInteger(verificaOpcao)) { // Verifica se é um número inteiro
+            opcao = stoi(verificaOpcao); // Converte para inteiro
+            if (opcao == 1 || opcao == 2) break; // Aceita apenas opções 1 ou 2
         }
-        cout << "Opcao invalida. Tente novamente: ";
+        cout << "Opcao invalida: "; // Mensagem de erro
     }
-    return opcao;
+    return opcao; // Retorna a opção escolhida
 }
 
-void lerProduto(string &carrinho, double &total) {
-    system("cls");  // Limpa a tela antes de ler o produto
-    int opcao;
-    cout << "========================\n";
-    cout << "      MENU SELECAO      \n";
-    cout << "========================\n";
-    cout << "Escolha o tipo de produto\n";
-    cout << "1 - Por quantidade\n";
-    cout << "2 - Por peso\n";
-    cout << "========================\n";
-    cout << "Escolha a opcao: ";
-
-    string verificaOpcao; //Variável para armazenar a entrada do tipo de produto
-    while (true) {  // Valida a entrada do tipo de produto
-        cin >> verificaOpcao; //Lê a entrada do usuário
-        if (isValidInteger(verificaOpcao)) { // Verifica se a entrada é um número inteiro
-            opcao = stoi(verificaOpcao); // Converte a string para inteiro
-            if (opcao == 1 || opcao == 2) break;// Aceita apenas opções 1 ou 2
-        }
-        cout << "Opcao invalida. Tente novamente: ";
+void salvarEstoque() {
+    ofstream arquivo("estoque.txt");
+    if (!arquivo) {
+        cout << "Erro ao abrir arquivo para salvar estoque.\n";
+        return;
     }
 
-    
-    string nome; //Variável para armazenar o nome do produto
-    double valor; //Variável para armazenar o valor do produto
+    for (const auto& produto : produtos) {
+        arquivo << produto.nome << " - R$ " << produto.precoPorKg << " por kg - "
+                << "R$ " << produto.precoPorUnidade << " por unidade - "
+                << "Quantidade: " << produto.quantidadeKg << " kg - "
+                << "Quantidade Unidades: " << produto.quantidadeUnidade << endl;
+    }
 
-    if (opcao == 1) { //Se a opção escolhida for 1 (por quantidade)
-        //Lógica para produtos por quantidade
-        int quantidade;  //Variável para armazenar a quantidade
-        cout << "Digite o nome do produto: ";
-        cin.ignore(); //Ignora o newline deixado pelo cin anterior
-        getline(cin, nome); //Lê o nome do produto
+    arquivo.close();
+}
 
-        // Valida a entrada da quantidade
-        while (true) {
-        cout << "Digite a quantidade: ";
-        string lerQuantidade; //Variável para armazenar a entrada
-        cin >> lerQuantidade;  //Lê a entrada do usuário
+// Função para realizar a compra
+void realizarCompra(SOCKET servidorSocket) {
+    int escolha; // Variável para armazenar a escolha do produto
+    float quantidade; // Variável para armazenar a quantidade do produto
+    vector<Produto> carrinho; // Usando vector para o carrinho
+    float total = 0.0;
 
-        if (isValidInteger(lerQuantidade)) { //Verifica se a entrada é um número inteiro
-            quantidade = stoi(lerQuantidade); //Converte a string para inteiro
-            if (quantidade > 0) { //Verifica se a quantidade é maior que 0
-                break; //Sai do loop se a quantidade for válida
-            } else {
-                cout << "Quantidade inválida. Deve ser maior que zero." << endl;
+        limparTela(); // Limpa a tela
+        vector<Produto> estoqueOriginal = produtos; // Armazena o estoque original
+
+        while (true) { // Loop para adicionar produtos
+            exibirMenu(); // Exibe o menu de produtos
+
+            string verificaEscolha; // Variável para verificar a entrada do usuário
+            while (true) { // Loop para validar a escolha do produto
+                cin >> verificaEscolha; // Lê a entrada
+                if (isValidInteger(verificaEscolha)) { // Verifica se é um número inteiro
+                    escolha = stoi(verificaEscolha); // Converte para inteiro
+                    if (escolha >= 0 && escolha <= produtos.size()) {
+                    break; // Valor válido, sai do loop
+                    }
+                }
+                cout << "Opcao invalida: "; // Mensagem de erro para entrada inválida
             }
-        } else {
-            cout << "Quantidade inválida. Tente novamente." << endl;
+
+            
+        if (escolha == 0) { // Se o usuário escolher cancelar
+            cout << "Compra cancelada. Restauração do estoque...\n";
+            produtos = estoqueOriginal; // Restaura o estoque original
+            salvarEstoque(); // Atualiza o arquivo com o estoque original
+            cout << "Estoque restaurado e salvo.\n"; // Confirmação
+            return;
+        }
+
+        // Escolher a forma de compra (kg ou unidade)
+        int formaCompra;
+        cout << "Escolha a forma de compra:\n";
+        cout << "1. Por kg\n";
+        cout << "2. Por unidade\n";
+        cout << "Escolha uma opção: ";
+
+        while (true) {
+            cin >> formaCompra;
+            if (formaCompra == 1 || formaCompra == 2) break; // Aceita apenas 1 ou 2
+            cout << "Opcao invalida! Tente novamente: ";
+        }
+
+        // Validação da quantidade do produto
+        string verificaQuantidade; // Variável para verificar a quantidade
+        while (true) { // Loop para validar a entrada da quantidade
+            if (formaCompra == 1) {
+                cout << "Informe o peso do produto (em kg): ";
+            } else {
+                cout << "Informe a quantidade do produto (em unidades): ";
+            }
+            cin >> verificaQuantidade;
+
+            // Tente converter a quantidade para int
+            try {
+                quantidade = stoi(verificaQuantidade); // Tenta converter para int
+                if (quantidade > 0) {
+                    break; // Quantidade válida
+                }
+            } catch (const invalid_argument&) {
+                cout << "Opcao invalida "; // Mensagem de erro se a conversão falhar
+            } catch (const out_of_range&) {
+                cout << "Valor fora do intervalo! Tente novamente. "; // Tratamento para valores fora do intervalo
+            }
+        }
+
+        // Validação de estoque baseado na forma de compra
+        if (formaCompra == 1) { // Comprando por kg
+            if (quantidade > produtos[escolha - 1].quantidadeKg) {
+                cout << "Quantidade insuficiente em kg! Tente novamente.\n";
+                continue; // Retorna ao início do loop para escolher outro produto
+            }
+            total += produtos[escolha - 1].precoPorKg * quantidade;
+            produtos[escolha - 1].quantidadeKg -= quantidade; // Atualiza a quantidade em kg
+            salvarEstoque();
+        } else { // Comprando por unidade
+            if (quantidade > produtos[escolha - 1].quantidadeUnidade) {
+                cout << "Quantidade insuficiente em unidades! Tente novamente.\n";
+                continue; // Retorna ao início do loop para escolher outro produto
+            }
+            total += produtos[escolha - 1].precoPorUnidade * quantidade;
+            produtos[escolha - 1].quantidadeUnidade -= quantidade; // Atualiza a quantidade em unidades
+            salvarEstoque();
+        }
+
+        // Atualiza o carrinho
+        bool produtoEncontrado = false;
+        for (auto& item : carrinho) {
+            if (item.nome == produtos[escolha - 1].nome) {
+                if (formaCompra == 1) { // Comprando por kg
+                    item.quantidadeKg += quantidade; // Atualiza a quantidade em kg
+                } else { // Comprando por unidade
+                    item.quantidadeUnidade += quantidade; // Atualiza a quantidade em unidades
+                }
+                produtoEncontrado = true;
+            break;
+            }
+        }
+
+        if (!produtoEncontrado) {
+            Produto novoProduto = produtos[escolha - 1];
+            novoProduto.quantidadeKg = formaCompra == 1 ? quantidade : 0; // Inicializa kg
+            novoProduto.quantidadeUnidade = formaCompra == 2 ? quantidade : 0; // Inicializa unidades
+            carrinho.push_back(novoProduto);
+        }
+
+
+        cout << "Você adicionou ao carrinho " << quantidade << (formaCompra == 1 ? " kg" : " unidades") << " de " << produtos[escolha - 1].nome << "\n";
+
+    while (true) {
+    string verificaopcao;
+    cout << "=====================================================================================================\n";
+    cout << "1 - Deseja adicionar mais produtos  \n";
+    cout << "2 - Finalizar compra                \n";
+    cout << "=====================================================================================================\n";
+    cout << "Escolha uma opcao: ";
+    cin >> verificaopcao;
+
+            if (isValidInteger(verificaopcao)) {
+                int opcao = stoi(verificaopcao);
+                if (opcao == 1) {
+                    // Retorna ao loop de seleção de produtos
+                    break; // Sai deste loop e recomeça a seleção de produtos
+                } else if (opcao == 2) {
+                    // Finalizar a compra
+                    goto finalizaCompra; // Salta para a seção de finalização da compra
+                }
+            }
+            cout << "Opcao inválida\n";
         }
     }
-        cout << "Digite o valor unitário: "; //Solicita o valor unitário do produto
-        string valorUnitario; // Variável para armazenar a entrada do valor
-        cin >> valorUnitario; // Lê a entrada do usuário
-        replace(valorUnitario.begin(), valorUnitario.end(), ',', '.'); //Substitui vírgula por ponto
-        valor = stod(valorUnitario); //Converte a string para double
-        total += quantidade * valor; //Atualiza o total com a nova compra
-        ostringstream oss; //Cria um objeto ostringstream para formatar a saída
-        oss << fixed << setprecision(2) << (quantidade * valor); //Formata o valor total
 
-        //Adiciona item ao carrinho
-        carrinho += nome + ": " + to_string(quantidade) + " Qtd - R$ " + oss.str() + "\n";
+finalizaCompra:
 
-    } else { //Se a opção escolhida for 2 (por peso)
-        // Lógica para produtos por peso
-        double peso; //Variável para armazenar o peso
-        cout << "Digite o nome do produto: ";
-        cin.ignore(); //Ignora o newline deixado pelo cin anterior
-        getline(cin, nome); // Lê o nome do produto
+    if (carrinho.empty()) {
+        cout << "Nenhum item adicionado ao carrinho.\n";
+        return;
+    }
 
-        cout << "Digite o peso: "; //Solicita o peso do produto
-        string lerPeso; //Variável para armazenar a entrada do peso
-        cin >> lerPeso; //Lê a entrada do usuário
-        replace(lerPeso.begin(), lerPeso.end(), ',', '.');//Substitui vírgula por ponto
-        peso = stod(lerPeso); //Converte a string para double
+    // Seleciona o método de pagamento
+    int metodoPagamento = selecionarMetodoPagamento();
+    float desconto = calcularDesconto(total, metodoPagamento); // Calcula o desconto
+    total -= desconto; // Aplica o desconto ao total
 
-        cout << "Digite o valor por Kg: "; //Solicita o valor por kg do produto
-        string valorKg; //Variável para armazenar a entrada do valor
-        cin >> valorKg; //Lê a entrada do usuário
-        replace(valorKg.begin(), valorKg.end(), ',', '.'); //Substitui vírgula por ponto
-        valor = stod(valorKg); //Converte a string para double
+    // Limpa a tela antes de mostrar o resumo da compra
+    limparTela();
 
-        total += peso * valor; //Atualiza o total com a nova compra
+    // Obtém data e hora
+    char dataHora[20]; // Declara um buffer para armazenar a data e hora
+    obterDataHora(dataHora, sizeof(dataHora)); // Obtém a data e hora formatada
 
-        ostringstream oss_peso, oss_valor; //Cria objetos ostringstream para formatar a saída
-        oss_peso << fixed << setprecision(2) << peso; //Formata o peso            
-        oss_valor << fixed << setprecision(2) << (peso * valor); //Formata o valor total
-        //Adiciona item ao carrinho
-        carrinho += nome + ": " + oss_peso.str() + " Kg - R$ " + oss_valor.str() + "\n";
+    // Exibe o resumo da compra
+    cout << "**************************************\n";
+    cout << "            NOTA FISCAL               \n";
+    cout << "**************************************\n";
+    cout << "Data e Hora: " << dataHora << "\n";
+    cout << "**************************************\n";
+    for (const auto& item : carrinho) {
+    if (item.quantidadeKg > 0) {
+        cout << item.nome << ": " << item.quantidadeKg << " kg - R$ " << item.precoPorKg * item.quantidadeKg << "\n";
+    }
+    if (item.quantidadeUnidade > 0) {
+        cout << item.nome << ": " << item.quantidadeUnidade << " unidades - R$ " << item.precoPorUnidade * item.quantidadeUnidade << "\n";
+    }
+}
+    cout << "*************************************\n";
+    cout << "Desconto: R$ " << desconto << "\n"; // Exibe o desconto
+    cout << "Total: R$ " << total << "\n"; // Exibe o total
+    cout << "*************************************\n";
+    cout << "AGRADECEMOS SUA COMPRA VOLTE SEMPRE!!\n"; // Mensagem de agradecimento
+    cout << "*************************************\n";
+
+    // Salva o estoque atualizado no arquivo
+    salvarEstoque();
+
+    cout << "Pressione qualquer tecla para voltar ao menu principal...\n"; // Mensagem para voltar ao menu
+    cin.ignore(); // Limpa o buffer
+    cin.get(); // Espera o usuário pressionar uma tecla
+
+    // Limpa a tela antes de voltar ao menu principal
+    limparTela();
+}   
+
+// Função que exibe o menu principal
+void menuPrincipal(SOCKET clienteSocket) {
+    while (true) {
+        limparTela(); // Limpa a tela antes de exibir o menu
+        cout << "========================\n";
+        cout << "    CAIXA HORTIFRUTI    \n";
+        cout << "========================\n";
+        cout << "1. Fazer uma compra\n"; // Opção para fazer uma compra
+        cout << "2. Cancelar compra\n"; // Opção para cancelar a compra
+        cout << "========================\n";
+        cout << "Escolha uma opcao: ";
+
+        string verificaOpcao; // Variável para armazenar a entrada do usuário
+        int opcao; // Variável para a opção escolhida
+
+        // Valida a entrada do tipo de produto
+        while (true) {
+            cin >> verificaOpcao; // Lê a entrada do usuário
+            if (isValidInteger(verificaOpcao)) { // Verifica se é um número inteiro
+                opcao = stoi(verificaOpcao); // Converte para inteiro
+                if (opcao == 1 || opcao == 2) break; // Aceita apenas opções 1 ou 2
+            }
+            cout << "Opcao invalida. Tente novamente: "; // Mensagem de erro
+        }
+
+        switch (opcao) { // Ação baseada na opção escolhida
+            case 1:
+                realizarCompra(clienteSocket); // Chama a função para realizar a compra
+                break;
+            case 2:
+                cout << "Compra Cancelada...\n"; // Mensagem de cancelamento
+                closesocket(clienteSocket); // Fecha o socket
+                WSACleanup(); // Limpa a Winsock
+                return; // Retorna da função
+        }
     }
 }
 
+// Função principal do programa
+int main() {
+    struct sockaddr_in servidorAddr; // Estrutura para armazenar informações do servidor
+    
+    SOCKET clienteSocket = inicializarSocket(); // Inicializa o socket do cliente
+    conectarServidor(clienteSocket, servidorAddr); // Conecta ao servidor
+    receberProdutos(clienteSocket); // Recebe a lista de produtos do servidor
+    
+    // Chamando a função de menu principal
+    menuPrincipal(clienteSocket); // Inicia o menu principal
 
-int main(){
-    int sock = iniciarEConectarSocket();
-     if (sock < 0){
-        return 1;
-     }
-
-    string carrinho; // Inicializa o carrinho
-    double total = 0.0; // Inicializa o total
-     while (true) {
-        int opcao = menuPrincipal(); // Chama o menu principal
-        if (opcao == 1) { // Se a opção for 1, lê o produto
-            lerProduto(carrinho, total); // Chama a função para ler produto
-        } else if (opcao == 2) { // Se a opção for 2, cancela a compra
-            cout << "Compra cancelada." << endl;
-            carrinho.clear(); // Limpa o carrinho
-            total = 0.0; // Reseta o total
-            cout << "Pressione qualquer tecla para uma nova compra..." << endl;
-            cin.ignore(); // Limpa o buffer do cin
-            cin.get(); // Espera o usuário pressionar Enter
-        }
-
-}
-
-closesocket(sock);
-WSACleanup();
-return 0;
+    return 0; // Retorna 0, indicando que o programa terminou com sucesso
 }
