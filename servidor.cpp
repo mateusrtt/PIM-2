@@ -1,109 +1,80 @@
 #include <iostream> 
 #include <cstring> // Inclui a biblioteca para manipulação de strings e arrays
 #include <winsock2.h> // Inclui a biblioteca para uso de sockets no Windows
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <string>
 #pragma comment(lib, "ws2_32.lib") // Indica ao linker para usar a biblioteca ws2_32.lib para Winsock
-#define MAX_PRODUTOS 5 // Define o número máximo de produtos no estoque
 #define PORTA 12345 // Define a porta que o servidor irá utilizar
 using namespace std; 
 
-struct ProdutoUnidade{
-    char nome[50];
-    float precoPorUnidade;
-    float quantidadeUnidade;
-};
-
 // Estrutura para representar um produto
 struct Produto {
-    char nome[50]; // Nome do produto (até 50 caracteres)
+    string nome; // Nome do produto (até 50 caracteres)
     float precoPorKg; // Preço por quilograma do produto
     float quantidade; // Quantidade disponível do produto
 };
 
-// Inicializa o estoque de produtos com valores padrão
-Produto produtos[MAX_PRODUTOS] = {
-    {"Banana", 2.50, 100.0},
-    {"Maçã", 3.00, 50.0},
-    {"Laranja", 1.80, 75.0},
-    {"Morango", 6.00, 30.0},
-    {"Melancia", 12.00, 20.0}
-};
+// Declaração do vetor de produtos
+vector<Produto> produtos;  // Vetor para armazenar os produtos do arquivo
+vector<Produto> estoqueOriginal;  // Cópia do estoque inicial
 
-ProdutoUnidade produtosunidade[MAX_PRODUTOS] = {
-    {"Amora", 0.95, 100.0},
-    {"Amendoim", 0.47, 50.0},
-    {"Caju", 0.71, 75.0},
-    {"Tomate", 0.82, 30.0},
-    {"Uva", 0.37, 20.0}
-};
-
-Produto estoqueOriginal[MAX_PRODUTOS]; // Array para armazenar o estoque original
-ProdutoUnidade estoqueOriginalUnidade[MAX_PRODUTOS];
-
-// Função para carregar o estoque de um arquivo
-
-void carregarEstoqueUnidade() {
-    FILE *arquivounidade = fopen("estoqueunidade.txt", "r"); // Abre o arquivo estoqueunidade.txt em modo de leitura
-    if (arquivounidade == nullptr) { // Verifica se o arquivo foi aberto corretamente
-        cout << "Arquivo de estoque não encontrado. Usando valores padrão.\n"; // Mensagem se o arquivo não existe
-        return; // Retorna da função se o arquivo não foi encontrado
+void carregarProdutos(const string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        cerr << "Erro ao abrir o arquivo: " << filename << endl;
+        return;
     }
 
-    // Lê os produtos do arquivo
-    for (int i = 0; i < MAX_PRODUTOS; i++) {
-        // Tenta ler os dados do produto do arquivo
-        if (fscanf(arquivounidade, "%49[^-] - R$ %f por unidade - Quantidade: %f",
-                   produtosunidade[i].nome, 
-                   &produtosunidade[i].precoPorUnidade, 
-                   &produtosunidade[i].quantidadeUnidade) != 3) {
-            // Se houver um erro na leitura, define valores padrão
-            cout << "Erro ao ler o arquivo de estoque. Usando valores padrão.\n";
-            strcpy(produtosunidade[i].nome, "Produto Desconhecido"); // Define um nome padrão se falhar
-            produtosunidade[i].precoPorUnidade = 0.0; // Preço padrão
-            produtosunidade[i].quantidadeUnidade = 0.0; // Quantidade padrão
-        }
-    }
+    string linha;
+    while (getline(file, linha)) {
+        Produto produto;
+        istringstream iss(linha);
+        string precoStr, quantidadeStr;
 
-    memcpy(estoqueOriginalUnidade, produtosunidade, sizeof(produtosunidade)); // Copia o estoque atual para o estoque original
-    fclose(arquivounidade); // Fecha o arquivo
+        // Ignora o número do produto
+        getline(iss, produto.nome, '-');
+        iss >> precoStr; // Pega "R$" e o preço
+        iss >> produto.precoPorKg; // Lê o preço
+        iss.ignore(256, ' '); // Ignora "por kg"
+        iss >> quantidadeStr; // Lê "Quantidade" e o valor
+        iss >> produto.quantidade;
+
+        produtos.push_back(produto);
+    }
+    file.close();
 }
+
 void carregarEstoque() {
     FILE *arquivo = fopen("estoque.txt", "r"); // Abre o arquivo estoque.txt em modo de leitura
     if (arquivo == nullptr) { // Verifica se o arquivo foi aberto corretamente
-        cout << "Arquivo de estoque não encontrado. Usando valores padrão.\n"; // Mensagem se o arquivo não existe
-        return; // Retorna da função se o arquivo não foi encontrado
-    }
-    // Lê os produtos do arquivo
-    for (int i = 0; i < MAX_PRODUTOS; i++) {
-        // Tenta ler os dados do produto do arquivo
-        if (fscanf(arquivo, "%49[^-] - R$ %f por kg - Quantidade: %f kg\n", 
-                   produtos[i].nome, 
-                   &produtos[i].precoPorKg, 
-                   &produtos[i].quantidade) != 3) {
-            // Mensagem de erro se a leitura falhar
-            cout << "Erro ao ler o arquivo de estoque. Usando valores padrão.\n";
-            strcpy(produtos[i].nome, "Produto Desconhecido"); // Define um nome padrão se falhar
-            produtos[i].precoPorKg = 0.0; // Preço padrão
-            produtos[i].quantidade = 0.0; // Quantidade padrão
-        }
-    }
-    memcpy(estoqueOriginal, produtos, sizeof(produtos)); // Copia o estoque atual para o original
-    fclose(arquivo); // Fecha o arquivo
-}
-
-
-void salvarEstoqueUnidade() {
-    FILE *arquivounidade = fopen("estoqueunidade.txt", "w");
-    if (arquivounidade ==nullptr) {
-        cout << "Erro ao abrir arquivo de estoque.\n";
+        cout << "Arquivo de estoque não encontrado\n";
         return;
     }
-    for (int i = 0; i < MAX_PRODUTOS; i++) {
-        fprintf(arquivounidade, "%s - R$ %.2f por unidade - quantidade: %.2f unidade\n",
-                produtosunidade[i].nome, produtosunidade[i].precoPorUnidade, produtosunidade[i].quantidadeUnidade);
-    }
-    fclose(arquivounidade);
-}
 
+    produtos.clear();  // Limpa o vetor para recarregar
+    Produto temp;
+    char linhaBuffer[200];  // Buffer temporário para a linha
+
+    while (fgets(linhaBuffer, sizeof(linhaBuffer), arquivo)) {
+        linhaBuffer[strcspn(linhaBuffer, "\n")] = 0; 
+
+        cout << "Lendo linha: " << linhaBuffer << endl;
+
+        char nome[50]; // buffer temporário para o nome
+        if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - Quantidade: %f kg", 
+                nome, &temp.precoPorKg, &temp.quantidade) == 3) {
+                temp.nome = nome; // Copia o nome para o objeto Produto
+            produtos.push_back(temp);
+        } else {
+            cout << "Falha ao analisar a linha: " << linhaBuffer << endl;
+        }
+    }
+
+    estoqueOriginal = produtos;  // Atualiza o estoque original
+    fclose(arquivo); // Fecha o arquivo
+}
 
 // Função para salvar o estoque em um arquivo
 void salvarEstoque() {
@@ -112,57 +83,46 @@ void salvarEstoque() {
         cout << "Erro ao abrir arquivo de estoque.\n"; // Mensagem de erro
         return; // Retorna da função se falhar
     }
-    // Escreve os produtos no arquivo
-    for (int i = 0; i < MAX_PRODUTOS; i++) {
+    for (const auto& produto : produtos) {
         fprintf(arquivo, "%s - R$ %.2f por kg - Quantidade: %.2f kg\n", 
-                produtos[i].nome, produtos[i].precoPorKg, produtos[i].quantidade); // Formata e grava cada produto
+                produto.nome.c_str(), produto.precoPorKg, produto.quantidade);
     }
     fclose(arquivo); // Fecha o arquivo
 }
 
-void enviarProdutosUnidade(SOCKET clienteSocket){
-    for (int i = 0; i < MAX_PRODUTOS; i++){
-        cout << "Enviando produto" << i << ":" << produtosunidade[i].nome << " - " << produtosunidade[i].quantidadeUnidade << "unidade\n";
-
-        if (send(clienteSocket, (char*)&produtosunidade[i], sizeof(ProdutoUnidade), 0) == SOCKET_ERROR){
-            cout << "Erro ao enviar produto " << i + 1 << ".Código de erro: " << WSAGetLastError << "\n";
-            return;
-        }
-    }
-}
-
-
 // Função para enviar a lista de produtos ao cliente
 void enviarProdutos(SOCKET clienteSocket) {
-    for (int i = 0; i < MAX_PRODUTOS; i++) { // Loop sobre todos os produtos
-        cout << "Enviando produto " << i << ": " << produtos[i].nome << " - " << produtos[i].quantidade << " kg\n"; // Mensagem de envio
-        // Envia os dados do produto para o cliente
-        if (send(clienteSocket, (char*)&produtos[i], sizeof(Produto), 0) == SOCKET_ERROR) {
-            cout << "Erro ao enviar produto " << i + 1 << ". Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
-            return; // Retorna da função se falhar
-        }
+    if (produtos.empty()) {
+        cout << "Nenhum produto disponível para enviar.\n";
+        int numeroDeProdutos = 0;
+        send(clienteSocket, (char*)&numeroDeProdutos, sizeof(numeroDeProdutos), 0);
+        return;
+    }
+
+    int numeroDeProdutos = produtos.size();
+    send(clienteSocket, (char*)&numeroDeProdutos, sizeof(numeroDeProdutos), 0);
+    
+    for (const auto& produto : produtos) {
+        int nomeTamanho = produto.nome.size();
+        send(clienteSocket, (char*)&nomeTamanho, sizeof(nomeTamanho), 0);
+        send(clienteSocket, produto.nome.c_str(), nomeTamanho, 0);
+        send(clienteSocket, (char*)&produto.precoPorKg, sizeof(produto.precoPorKg), 0);
+        send(clienteSocket, (char*)&produto.quantidade, sizeof(produto.quantidade), 0);
     }
 }
-
-void atualizarQuantidadeUnidade(int index, float quantidade){
-    if (index >= 0 && index < MAX_PRODUTOS){
-        cout << "Atualizando produto " << index << ": " << produtosunidade[index].nome << ", quantidade a subtrair: " << quantidade << "\n";
-        produtosunidade[index].quantidadeUnidade -= quantidade; // Subtrai a quantidade do estoque
-        salvarEstoqueUnidade();
-    } else {
-        cout << "Índice inválido: " << index << "\n";
-    }
-}
-
 
 // Função para atualizar a quantidade do produto
 void atualizarQuantidade(int index, float quantidade) {
-    if (index >= 0 && index < MAX_PRODUTOS) { // Verifica se o índice é válido
-        cout << "Atualizando produto " << index << ": " << produtos[index].nome << ", quantidade a subtrair: " << quantidade << "\n"; // Mensagem de atualização
-        produtos[index].quantidade -= quantidade; // Subtrai a quantidade do estoque
-        salvarEstoque(); // Salva as alterações no arquivo
+    if (index >= 0 && index < produtos.size()) {
+        if (produtos[index].quantidade >= quantidade) {
+            cout << "Atualizando produto " << index << ": " << produtos[index].nome << ", quantidade a subtrair: " << quantidade << "\n";
+            produtos[index].quantidade -= quantidade;
+            salvarEstoque();
+        } else {
+            cout << "Quantidade insuficiente para o produto: " << produtos[index].nome << "\n";
+        }
     } else {
-        cout << "Índice inválido: " << index << "\n"; // Mensagem de erro se o índice for inválido
+        cout << "Índice inválido: " << index << "\n";
     }
 }
 
@@ -291,7 +251,6 @@ void iniciarServidor() {
 // Função principal do programa
 int main() {
     // Carrega o estoque inicial
-    carregarEstoqueUnidade();
     carregarEstoque(); // Chama a função para carregar os produtos do arquivo
     
     // Inicia o servidor
