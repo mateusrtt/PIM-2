@@ -50,6 +50,13 @@ bool isValidInteger(const string& input) {
     return all_of(input.begin(), input.end(), ::isdigit); // Verifica se todos os caracteres são dígitos
 }
 
+bool isValidFloat(const string& str) {
+    istringstream iss(str);
+    float f;
+    return iss >> f && iss.eof();
+}
+
+
 // Função para conectar ao servidor
 void conectarServidor(SOCKET clienteSocket, struct sockaddr_in& servidorAddr) {
     servidorAddr.sin_family = AF_INET; // Define a família de endereços
@@ -255,7 +262,7 @@ void realizarCompra(SOCKET servidorSocket) {
         cout << "1. Por kg\n";
         cout << "2. Por unidade\n";
         cout << "==============================================\n";
-        cout << "Escolha uma opção: ";
+        cout << "Escolha uma opcao: ";
 
         while (true) {
             cin >> verificaFormaCompra; // Lê a entrada
@@ -265,7 +272,7 @@ void realizarCompra(SOCKET servidorSocket) {
             break; // Valor válido, sai do loop
         }
     }
-    cout << "Opcao invalida"; // Mensagem de erro para entrada inválida
+    cout << "Opcao invalida: "; // Mensagem de erro para entrada inválida
 }
 
         // Validação da quantidade do produto
@@ -278,22 +285,44 @@ void realizarCompra(SOCKET servidorSocket) {
             }
             cin >> verificaQuantidade;
 
-        // Verifica se a entrada é um inteiro válido
-        if (isValidInteger(verificaQuantidade)) {
-            quantidade = stoi(verificaQuantidade); // Converte para int
+    // Substitui vírgula por ponto se a forma de compra for kg
+    if (formaCompra == 1) {
+        for (char& c : verificaQuantidade) {
+            if (c == ',') {
+                c = '.';
+            }
+        }
+    }
+
+    // Verifica se a entrada é válida
+    if (formaCompra == 1) {
+        if (isValidFloat(verificaQuantidade)) {
+            quantidade = stof(verificaQuantidade); // Converte para float
             if (quantidade > 0) {
+                 // Validação de estoque
+                if (quantidade > produtos[escolha - 1].quantidadeKg) {
+                    cout << "Quantidade insuficiente em kg! Tente novamente.\n";
+                continue; // Retorna ao início do loop para escolher outro produto
+                }
                 break; // Quantidade válida
             }
         }
-    cout << "Opcao invalida"; // Mensagem de erro se a conversão falhar
+    } else {
+        if (isValidInteger(verificaQuantidade)) {
+            quantidade = stoi(verificaQuantidade); // Converte para int
+            if (quantidade > 0) {
+                 // Validação de estoque
+                if (quantidade > produtos[escolha - 1].quantidadeUnidade) {
+                    cout << "Quantidade insuficiente em unidades! Tente novamente.\n";
+                continue; // Retorna ao início do loop para escolher outro produto
+                }
+                break; // Quantidade válida
+            }
+        }
+    }
+    cout << "Opcao invalida "; // Mensagem de erro 
 }
 
-// Validação de estoque e atualização da quantidade
-if ((formaCompra == 1 && quantidade > produtos[escolha - 1].quantidadeKg) ||
-    (formaCompra == 2 && quantidade > produtos[escolha - 1].quantidadeUnidade)) {
-    cout << "Quantidade insuficiente! Tente novamente.\n";
-    continue; // Retorna ao início do loop para escolher outro produto
-}
 
 // Atualiza total e estoque
 if (formaCompra == 1) { // Comprando por kg
@@ -328,8 +357,7 @@ salvarEstoque();
             carrinho.push_back(novoProduto);
         }
 
-
-        cout << "Você adicionou ao carrinho " << quantidade << (formaCompra == 1 ? " kg" : " unidades") << " de " << produtos[escolha - 1].nome << "\n";
+        cout << "Adicionou ao carrinho " << quantidade << (formaCompra == 1 ? " kg" : " unidades") << " de " << produtos[escolha - 1].nome << "\n";
 
     while (true) {
     string verificaopcao;
@@ -350,7 +378,7 @@ salvarEstoque();
                     goto finalizaCompra; // Salta para a seção de finalização da compra
                 }
             }
-            cout << "Opcao inválida\n";
+            cout << "Opcao invalida: \n";
         }
     }
 
