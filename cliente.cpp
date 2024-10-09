@@ -247,21 +247,30 @@ void realizarCompra(SOCKET servidorSocket) {
         }
 
         // Escolher a forma de compra (kg ou unidade)
-        int formaCompra;
-        cout << "Escolha a forma de compra:\n";
+       int formaCompra;
+        string verificaFormaCompra; // Variável para verificar a entrada do usuário
+        cout << "==============================================\n";
+        cout << "          ESCOLHA A FORMA DA COMPRA           \n";
+        cout << "==============================================\n";
         cout << "1. Por kg\n";
         cout << "2. Por unidade\n";
+        cout << "==============================================\n";
         cout << "Escolha uma opção: ";
 
         while (true) {
-            cin >> formaCompra;
-            if (formaCompra == 1 || formaCompra == 2) break; // Aceita apenas 1 ou 2
-            cout << "Opcao invalida! Tente novamente: ";
+            cin >> verificaFormaCompra; // Lê a entrada
+            if (isValidInteger(verificaFormaCompra)) { // Verifica se é um número inteiro
+                formaCompra = stoi(verificaFormaCompra); // Converte para inteiro
+            if (formaCompra == 1 || formaCompra == 2) {
+            break; // Valor válido, sai do loop
         }
+    }
+    cout << "Opcao invalida"; // Mensagem de erro para entrada inválida
+}
 
         // Validação da quantidade do produto
         string verificaQuantidade; // Variável para verificar a quantidade
-        while (true) { // Loop para validar a entrada da quantidade
+        while (true) {
             if (formaCompra == 1) {
                 cout << "Informe o peso do produto (em kg): ";
             } else {
@@ -269,37 +278,34 @@ void realizarCompra(SOCKET servidorSocket) {
             }
             cin >> verificaQuantidade;
 
-            // Tente converter a quantidade para int
-            try {
-                quantidade = stoi(verificaQuantidade); // Tenta converter para int
-                if (quantidade > 0) {
-                    break; // Quantidade válida
-                }
-            } catch (const invalid_argument&) {
-                cout << "Opcao invalida "; // Mensagem de erro se a conversão falhar
-            } catch (const out_of_range&) {
-                cout << "Valor fora do intervalo! Tente novamente. "; // Tratamento para valores fora do intervalo
+        // Verifica se a entrada é um inteiro válido
+        if (isValidInteger(verificaQuantidade)) {
+            quantidade = stoi(verificaQuantidade); // Converte para int
+            if (quantidade > 0) {
+                break; // Quantidade válida
             }
         }
+    cout << "Opcao invalida"; // Mensagem de erro se a conversão falhar
+}
 
-        // Validação de estoque baseado na forma de compra
-        if (formaCompra == 1) { // Comprando por kg
-            if (quantidade > produtos[escolha - 1].quantidadeKg) {
-                cout << "Quantidade insuficiente em kg! Tente novamente.\n";
-                continue; // Retorna ao início do loop para escolher outro produto
-            }
-            total += produtos[escolha - 1].precoPorKg * quantidade;
-            produtos[escolha - 1].quantidadeKg -= quantidade; // Atualiza a quantidade em kg
-            salvarEstoque();
-        } else { // Comprando por unidade
-            if (quantidade > produtos[escolha - 1].quantidadeUnidade) {
-                cout << "Quantidade insuficiente em unidades! Tente novamente.\n";
-                continue; // Retorna ao início do loop para escolher outro produto
-            }
-            total += produtos[escolha - 1].precoPorUnidade * quantidade;
-            produtos[escolha - 1].quantidadeUnidade -= quantidade; // Atualiza a quantidade em unidades
-            salvarEstoque();
-        }
+// Validação de estoque e atualização da quantidade
+if ((formaCompra == 1 && quantidade > produtos[escolha - 1].quantidadeKg) ||
+    (formaCompra == 2 && quantidade > produtos[escolha - 1].quantidadeUnidade)) {
+    cout << "Quantidade insuficiente! Tente novamente.\n";
+    continue; // Retorna ao início do loop para escolher outro produto
+}
+
+// Atualiza total e estoque
+if (formaCompra == 1) { // Comprando por kg
+    total += produtos[escolha - 1].precoPorKg * quantidade;
+    produtos[escolha - 1].quantidadeKg -= quantidade; // Atualiza a quantidade em kg
+} else { // Comprando por unidade
+    total += produtos[escolha - 1].precoPorUnidade * quantidade;
+    produtos[escolha - 1].quantidadeUnidade -= quantidade; // Atualiza a quantidade em unidades
+}
+
+// Salva o estoque atualizado
+salvarEstoque();
 
         // Atualiza o carrinho
         bool produtoEncontrado = false;

@@ -1,5 +1,5 @@
-Banana           - R$ 10 por kg - R$ 2 por unidade - Quantidade: 44 kg - Quantidade Unidades: 95
-Laranja           - R$ 15 por kg - R$ 3 por unidade - Quantidade: 30 kg - Quantidade Unidades: 50
-Manga           - R$ 12 por kg - R$ 2.5 por unidade - Quantidade: 40 kg - Quantidade Unidades: 80
-Uva           - R$ 18 por kg - R$ 4 por unidade - Quantidade: 20 kg - Quantidade Unidades: 30
-Maca           - R$ 8 por kg - R$ 1.5 por unidade - Quantidade: 60 kg - Quantidade Unidades: 120
+Banana             - R$ 10 por kg - R$ 2 por unidade - Quantidade: 44 kg - Quantidade Unidades: 95
+Laranja             - R$ 15 por kg - R$ 3 por unidade - Quantidade: 30 kg - Quantidade Unidades: 50
+Manga             - R$ 12 por kg - R$ 2.5 por unidade - Quantidade: 40 kg - Quantidade Unidades: 80
+Uva             - R$ 18 por kg - R$ 4 por unidade - Quantidade: 20 kg - Quantidade Unidades: 30
+Maca             - R$ 8 por kg - R$ 1.5 por unidade - Quantidade: 60 kg - Quantidade Unidades: 120
