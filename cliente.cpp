@@ -148,17 +148,42 @@ void receberProdutos(SOCKET clienteSocket) {
 // Função para exibir o menu de produtos
 void exibirMenu() {
     limparTela();
+
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    // Muda a cor para amarelo
+    SetConsoleTextAttribute(hConsole, 1); // 
     cout << "=====================================================================================================\n";
+     SetConsoleTextAttribute(hConsole, 7 | 0x10); 
     cout << "                                     SELECIONE OS PRODUTOS                                           \n";
+     SetConsoleTextAttribute(hConsole, 1); 
     cout << "=====================================================================================================\n";
-    cout << fixed << setprecision(2);
+    SetConsoleTextAttribute(hConsole, 1); // Texto branco (7), fundo verde (2)
+    cout << left << setw(5) << "ID" 
+         << setw(20) << "Produto" 
+         << setw(20) << "Preco kg" 
+         << setw(20) << "Preco unid" 
+         << setw(20) << "Qtd.kg" 
+         << setw(20) << "Qtd.unid" << endl;
+    
+    SetConsoleTextAttribute(hConsole, 1); // Texto branco (7), fundo verde (2)
+    cout << "=====================================================================================================\n";
+    SetConsoleTextAttribute(hConsole, 7 | 0x10); // Texto branco (7), fundo azul (1)
+
     for (size_t i = 0; i < produtos.size(); i++) {
-         cout << i + 1 << ". " << produtos[i].nome 
-             << " - R$ " << produtos[i].precoPorKg << " por kg - R$ " 
-             << produtos[i].precoPorUnidade << " por unidade - Quantidade: " 
-             << produtos[i].quantidadeKg << " kg - Quantidade Unidades: " 
-             << produtos[i].quantidadeUnidade << " unidades\n";
+        string nomeProduto = produtos[i].nome;
+        if (nomeProduto.length() > 20) {
+            nomeProduto = nomeProduto.substr(0, 17); // Trunca e adiciona reticências
+        }
+
+        cout << left << setw(5) << (i + 1) 
+             << setw(20) << nomeProduto 
+             << setw(20) << fixed << setprecision(2) << produtos[i].precoPorKg 
+             << setw(20) << fixed << setprecision(2) << produtos[i].precoPorUnidade 
+             << setw(20) << fixed << setprecision(2) << produtos[i].quantidadeKg 
+             << setw(20) << produtos[i].quantidadeUnidade << endl;
     }
+    SetConsoleTextAttribute(hConsole, 1);
     cout << "=====================================================================================================\n";
     cout << "Digite o numero do produto (ou 0 para cancelar): ";
 }
