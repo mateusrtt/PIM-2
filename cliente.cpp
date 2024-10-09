@@ -56,6 +56,11 @@ bool isValidFloat(const string& str) {
     return iss >> f && iss.eof();
 }
 
+void mudaCor(int corTexto, int corFundo=0) {
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+    SetConsoleTextAttribute(hConsole, corTexto | (corFundo << 4));
+}
+
 
 // Função para conectar ao servidor
 void conectarServidor(SOCKET clienteSocket, struct sockaddr_in& servidorAddr) {
@@ -148,28 +153,21 @@ void receberProdutos(SOCKET clienteSocket) {
 // Função para exibir o menu de produtos
 void exibirMenu() {
     limparTela();
-
-    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
     // Muda a cor para amarelo
-    SetConsoleTextAttribute(hConsole, 1); // 
-    cout << "=====================================================================================================\n";
-     SetConsoleTextAttribute(hConsole, 7 | 0x10); 
-    cout << "                                     SELECIONE OS PRODUTOS                                           \n";
-     SetConsoleTextAttribute(hConsole, 1); 
-    cout << "=====================================================================================================\n";
-    SetConsoleTextAttribute(hConsole, 1); // Texto branco (7), fundo verde (2)
+    mudaCor(1); 
+    cout << "=========================================================================================================\n";
+    mudaCor(1,6);
+    cout << "                                         SELECIONE OS PRODUTOS                                           \n";
+     mudaCor(1); 
+    cout << "=========================================================================================================\n";
     cout << left << setw(5) << "ID" 
          << setw(20) << "Produto" 
          << setw(20) << "Preco kg" 
          << setw(20) << "Preco unid" 
          << setw(20) << "Qtd.kg" 
          << setw(20) << "Qtd.unid" << endl;
-    
-    SetConsoleTextAttribute(hConsole, 1); // Texto branco (7), fundo verde (2)
-    cout << "=====================================================================================================\n";
-    SetConsoleTextAttribute(hConsole, 7 | 0x10); // Texto branco (7), fundo azul (1)
-
+    cout << "=========================================================================================================\n";
+    mudaCor(7,1); 
     for (size_t i = 0; i < produtos.size(); i++) {
         string nomeProduto = produtos[i].nome;
         if (nomeProduto.length() > 20) {
@@ -183,8 +181,8 @@ void exibirMenu() {
              << setw(20) << fixed << setprecision(2) << produtos[i].quantidadeKg 
              << setw(20) << produtos[i].quantidadeUnidade << endl;
     }
-    SetConsoleTextAttribute(hConsole, 1);
-    cout << "=====================================================================================================\n";
+    mudaCor(1); 
+    cout << "=========================================================================================================\n";
     cout << "Digite o numero do produto (ou 0 para cancelar): ";
 }
 
@@ -204,15 +202,18 @@ float calcularDesconto(float total, int metodoPagamento) {
 }
 
 // Função para selecionar o método de pagamento
-int selecionarMetodoPagamento() {
+void selecionarMetodoPagamento(float total, float& desconto, float& totalComDesconto) {
     limparTela(); // Limpa a tela
     int opcao; // Variável para armazenar a opção selecionada
-    cout << "==============================================\n";
-    cout << "              TIPO DE PAGAMENTO               \n";
-    cout << "==============================================\n";
-    cout << "1. Pix (10%% de desconto)\n";
-    cout << "2. Cartão de Crédito (sem desconto)\n";
-    cout << "==============================================\n";
+    cout << "=========================================================================================================\n";
+    mudaCor(1,6); 
+    cout << "                                          TIPO DE PAGAMENTO                                              \n";
+    mudaCor(1); 
+    cout << "=========================================================================================================\n";
+    cout << "1. Dinheiro (10% de desconto)\n";
+    cout << "2. Pix (5% de desconto)\n";
+    cout << "3. Cartao de Credito (sem desconto)\n";
+    cout << "=========================================================================================================\n";
     cout << "Escolha uma opcao: ";
 
     string verificaOpcao; // Variável para armazenar a entrada do usuário
@@ -220,11 +221,22 @@ int selecionarMetodoPagamento() {
         cin >> verificaOpcao; // Lê a entrada
         if (isValidInteger(verificaOpcao)) { // Verifica se é um número inteiro
             opcao = stoi(verificaOpcao); // Converte para inteiro
-            if (opcao == 1 || opcao == 2) break; // Aceita apenas opções 1 ou 2
+            if (opcao >=1 && opcao <= 3) break; // Aceita apenas opções 1 ou 2
         }
         cout << "Opcao invalida: "; // Mensagem de erro
     }
-    return opcao; // Retorna a opção escolhida
+
+    desconto = 0.0; // Inicializa o desconto
+    totalComDesconto = total; // Inicializa o total após desconto
+
+    // Aplicação de desconto com base na opção escolhida
+    if (opcao == 1) { 
+        desconto = total * 0.10; 
+        totalComDesconto -= desconto; 
+    } else if (opcao == 2) { 
+        desconto = total * 0.05; 
+        totalComDesconto -= desconto; 
+    }
 }
 
 void salvarEstoque() {
@@ -250,7 +262,7 @@ void realizarCompra(SOCKET servidorSocket) {
     float quantidade; // Variável para armazenar a quantidade do produto
     vector<Produto> carrinho; // Usando vector para o carrinho
     float total = 0.0;
-
+    
         limparTela(); // Limpa a tela
         vector<Produto> estoqueOriginal = produtos; // Armazena o estoque original
 
@@ -281,12 +293,14 @@ void realizarCompra(SOCKET servidorSocket) {
         // Escolher a forma de compra (kg ou unidade)
        int formaCompra;
         string verificaFormaCompra; // Variável para verificar a entrada do usuário
-        cout << "==============================================\n";
-        cout << "          ESCOLHA A FORMA DA COMPRA           \n";
-        cout << "==============================================\n";
+        cout << "=========================================================================================================\n";
+        mudaCor(1,6); 
+        cout << "                                           FORMA DE COMPRA                                                \n";
+        mudaCor(1); 
+        cout << "=========================================================================================================\n";
         cout << "1. Por kg\n";
         cout << "2. Por unidade\n";
-        cout << "==============================================\n";
+        cout << "=========================================================================================================\n";
         cout << "Escolha uma opcao: ";
 
         while (true) {
@@ -386,10 +400,10 @@ salvarEstoque();
 
     while (true) {
     string verificaopcao;
-    cout << "=====================================================================================================\n";
+    cout << "=========================================================================================================\n";
     cout << "1 - Deseja adicionar mais produtos  \n";
     cout << "2 - Finalizar compra                \n";
-    cout << "=====================================================================================================\n";
+    cout << "=========================================================================================================\n";
     cout << "Escolha uma opcao: ";
     cin >> verificaopcao;
 
@@ -414,10 +428,12 @@ finalizaCompra:
         return;
     }
 
-    // Seleciona o método de pagamento
-    int metodoPagamento = selecionarMetodoPagamento();
-    float desconto = calcularDesconto(total, metodoPagamento); // Calcula o desconto
-    total -= desconto; // Aplica o desconto ao total
+    // Declare as variáveis para desconto e total com desconto
+    float desconto; // Variável para armazenar o desconto
+    float totalComDesconto; // Variável para armazenar o total com desconto
+
+    // Seleciona o método de pagamento e calcula total com desconto
+    selecionarMetodoPagamento(total, desconto, totalComDesconto);
 
     // Limpa a tela antes de mostrar o resumo da compra
     limparTela();
@@ -427,29 +443,33 @@ finalizaCompra:
     obterDataHora(dataHora, sizeof(dataHora)); // Obtém a data e hora formatada
 
     // Exibe o resumo da compra
-    cout << "**************************************\n";
-    cout << "            NOTA FISCAL               \n";
-    cout << "**************************************\n";
-    cout << "Data e Hora: " << dataHora << "\n";
-    cout << "**************************************\n";
+    mudaCor(6); 
+    cout << "*********************************************************************************************************\n";
+    cout << "                                         NOTA FISCAL                                                     \n";
+    cout << "*********************************************************************************************************\n";
+    cout << "Data e Hora: " << dataHora <<                                                                           "\n";
+    cout << "*********************************************************************************************************\n";
     for (const auto& item : carrinho) {
     if (item.quantidadeKg > 0) {
-        cout << item.nome << ": " << item.quantidadeKg << " kg - R$ " << item.precoPorKg * item.quantidadeKg << "\n";
-    }
+        cout << item.nome << ": " << item.quantidadeKg << "kg - R$" << fixed << setprecision(2) << item.precoPorKg * item.quantidadeKg 
+        <<                                                                       " \n";
+        }
     if (item.quantidadeUnidade > 0) {
-        cout << item.nome << ": " << item.quantidadeUnidade << " unidades - R$ " << item.precoPorUnidade * item.quantidadeUnidade << "\n";
-    }
-}
-    cout << "*************************************\n";
-    cout << "Desconto: R$ " << desconto << "\n"; // Exibe o desconto
-    cout << "Total: R$ " << total << "\n"; // Exibe o total
-    cout << "*************************************\n";
-    cout << "AGRADECEMOS SUA COMPRA VOLTE SEMPRE!!\n"; // Mensagem de agradecimento
-    cout << "*************************************\n";
+        cout << item.nome << ": " << item.quantidadeUnidade << "un - R$" << fixed << setprecision(2) << item.precoPorUnidade * item.quantidadeUnidade <<"                                                                        \n";
+        }
+    }   
+    cout << "*********************************************************************************************************\n";
+    cout << "Total: R$ " << total <<"                                                                                 \n";
+    cout << "Desconto: R$ " << desconto <<"                                                                           \n"; 
+    cout << "Total com desconto: R$ " << totalComDesconto <<"                                                         \n"; 
+    cout << "*********************************************************************************************************\n";
+    cout << "                             AGRADECEMOS SUA COMPRA VOLTE SEMPRE!!                                       \n";
+    cout << "*********************************************************************************************************\n";
 
     // Salva o estoque atualizado no arquivo
     salvarEstoque();
 
+    mudaCor(15); 
     cout << "Pressione qualquer tecla para voltar ao menu principal...\n"; // Mensagem para voltar ao menu
     cin.ignore(); // Limpa o buffer
     cin.get(); // Espera o usuário pressionar uma tecla
@@ -462,12 +482,15 @@ finalizaCompra:
 void menuPrincipal(SOCKET clienteSocket) {
     while (true) {
         limparTela(); // Limpa a tela antes de exibir o menu
-        cout << "========================\n";
-        cout << "    CAIXA HORTIFRUTI    \n";
-        cout << "========================\n";
-        cout << "1. Fazer uma compra\n"; // Opção para fazer uma compra
-        cout << "2. Cancelar compra\n"; // Opção para cancelar a compra
-        cout << "========================\n";
+        mudaCor(1);
+        cout << "=========================================================================================================\n";
+        mudaCor(0,6); 
+        cout << "                                            CAIXA HORTIFRUTI                                             \n";
+        mudaCor(1); 
+        cout << "=========================================================================================================\n";
+        cout << "1. Fazer uma compra \n"; // Opção para fazer uma compra
+        cout << "2. Cancelar compra  \n"; // Opção para cancelar a compra
+        cout << "=========================================================================================================\n";
         cout << "Escolha uma opcao: ";
 
         string verificaOpcao; // Variável para armazenar a entrada do usuário
