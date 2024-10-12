@@ -18,99 +18,8 @@ struct Produto {
     int quantidadeUnidade; 
 };
 
-// Declaração do vetor de produtos
 vector<Produto> produtos;  // Vetor para armazenar os produtos do arquivo
 vector<Produto> estoqueOriginal;  // Cópia do estoque inicial
-
-void carregarEstoque() {
-    FILE *arquivo = fopen("estoque.txt", "r"); // Abre o arquivo estoque.txt em modo de leitura
-    if (arquivo == nullptr) { // Verifica se o arquivo foi aberto corretamente
-        cout << "Arquivo de estoque não encontrado\n";
-        return;
-    }
-
-    produtos.clear();  // Limpa o vetor para recarregar
-    Produto temp;
-    char linhaBuffer[300];  // Buffer temporário para a linha
-
-    while (fgets(linhaBuffer, sizeof(linhaBuffer), arquivo)) {
-        linhaBuffer[strcspn(linhaBuffer, "\n")] = 0; 
-
-        cout << "Lendo linha: " << linhaBuffer << endl;
-
-        char nome[50]; // buffer temporário para o nome
-        if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - R$ %f por unidade - Quantidade: %f kg - Quantidade Unidades: %d",
-            nome, &temp.precoPorKg, &temp.precoPorUnidade, &temp.quantidadeKg, &temp.quantidadeUnidade) == 5) {
-            temp.nome = nome; // Copia o nome para o objeto Produto
-            produtos.push_back(temp);
-        } else {
-            cout << "Falha ao analisar a linha: " << linhaBuffer << endl;
-        }
-    }
-
-    estoqueOriginal = produtos;  // Atualiza o estoque original
-    fclose(arquivo); // Fecha o arquivo
-}
-
-// Função para salvar o estoque em um arquivo
-void salvarEstoque() {
-    FILE *arquivo = fopen("estoque.txt", "w"); // Abre o arquivo estoque.txt em modo de escrita
-    if (arquivo == nullptr) { // Verifica se o arquivo foi aberto corretamente
-        cout << "Erro ao abrir arquivo de estoque.\n"; // Mensagem de erro
-        return; // Retorna da função se falhar
-    }
-    for (const auto& produto : produtos) {
-        fprintf(arquivo, "%s - R$ %.2f por kg - R$ %.2f por unidade - Quantidade: %.2f kg - Quantidade Unidades: %d\n",
-                produto.nome.c_str(), produto.precoPorKg, produto.precoPorUnidade, produto.quantidadeKg, produto.quantidadeUnidade);
-    }
-    fclose(arquivo); // Fecha o arquivo
-}
-
-// Função para enviar a lista de produtos ao cliente
-void enviarProdutos(SOCKET clienteSocket) {
-    if (produtos.empty()) {
-        cout << "Nenhum produto disponível para enviar.\n";
-        int numeroDeProdutos = 0;
-        send(clienteSocket, (char*)&numeroDeProdutos, sizeof(numeroDeProdutos), 0);
-        return;
-    }
-
-    int numeroDeProdutos = produtos.size();
-    send(clienteSocket, (char*)&numeroDeProdutos, sizeof(numeroDeProdutos), 0);
-    
-    for (const auto& produto : produtos) {
-        int nomeTamanho = produto.nome.size();
-        send(clienteSocket, (char*)&nomeTamanho, sizeof(nomeTamanho), 0);
-        send(clienteSocket, produto.nome.c_str(), nomeTamanho, 0);
-        send(clienteSocket, (char*)&produto.precoPorKg, sizeof(produto.precoPorKg), 0);
-        send(clienteSocket, (char*)&produto.quantidadeKg, sizeof(produto.quantidadeKg), 0);
-        send(clienteSocket, (char*)&produto.precoPorUnidade, sizeof(produto.precoPorUnidade), 0);
-        send(clienteSocket, (char*)&produto.quantidadeUnidade, sizeof(produto.quantidadeUnidade), 0);
-    }
-}
-
-// Função para atualizar a quantidade do produto
-void atualizarQuantidade(int index, float quantidade, bool porUnidade) {
-    if (index >= 0 && index < produtos.size()) {
-              if (porUnidade) {
-            if (produtos[index].quantidadeUnidade >= quantidade) {
-                produtos[index].quantidadeUnidade -= quantidade;
-                cout << "Produto " << produtos[index].nome << " atualizado: - " << quantidade << " unidade(s).\n";
-            } else {
-                cout << "Quantidade insuficiente para o produto: " << produtos[index].nome << "\n";
-            }
-        } else {
-            if (produtos[index].quantidadeKg >= quantidade) {
-                produtos[index].quantidadeKg -= quantidade;
-                cout << "Produto " << produtos[index].nome << " atualizado: - " << quantidade << " kg.\n";
-            } else {
-                cout << "Quantidade insuficiente para o produto: " << produtos[index].nome << "\n";
-            }
-        }
-    } else {
-        cout << "Índice inválido: " << index << "\n";
-    }
-}
 
 // Função para configurar o socket do servidor
 SOCKET configurarServidor() {
@@ -149,7 +58,6 @@ SOCKET configurarServidor() {
         WSACleanup(); // Limpa a Winsock
         return INVALID_SOCKET; // Retorna socket inválido
     }
-
     return servidorSocket; // Retorna o socket do servidor configurado
 }
 
@@ -166,71 +74,136 @@ SOCKET aceitarConexao(SOCKET servidorSocket) {
     return clienteSocket; // Retorna o socket do cliente
 }
 
-// Função para processar a conexão com o cliente
-void processarConexao(SOCKET clienteSocket) {
-    int index;
-    float quantidade; 
-    int bytesRecebidos; 
-    bool porUnidade; 
+bool validarIndice(int index) {
+    return index >= 0 && index < produtos.size();
+}
 
-    enviarProdutos(clienteSocket); // Envia a lista de produtos para o cliente
+// Função para atualizar a quantidade do produto
+void atualizarQuantidade(int index, float quantidade, bool porUnidade) {
+    if (!validarIndice(index)) {
+         cout<<"Índice inválido: " + to_string(index);
+        return;
+    }
 
-    while (true) { // Loop para processar as mensagens do cliente
-        // Receber o índice do produto
-        bytesRecebidos = recv(clienteSocket, (char*)&index, sizeof(index), 0); // Recebe o índice do produto
-        if (bytesRecebidos == SOCKET_ERROR) { // Verifica se ocorreu erro na recepção
-            cout << "Erro ao receber índice do produto. Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
-            break; // Sai do loop em caso de erro
-        } else if (bytesRecebidos == 0) { // Verifica se a conexão foi encerrada
-            cout << "Conexão encerrada pelo cliente.\n"; // Mensagem de encerramento
-            break; // Sai do loop
-        }
-
-        index--;  // Ajusta o índice para o array (começando em 0)
-
-         // Receber a quantidade do produto (por unidade)
-        bytesRecebidos = recv(clienteSocket, (char*)&quantidade, sizeof(quantidade), 0);
-        if (bytesRecebidos == SOCKET_ERROR) {
-            cout << "Erro ao receber quantidade. Código de erro: " << WSAGetLastError() << "\n";
-            break; 
-        } else if (bytesRecebidos == 0) {
-            cout << "Conexão encerrada pelo cliente.\n";
-            break; 
-        }
-
-        // Receber se a compra é por unidade
-        bytesRecebidos = recv(clienteSocket, (char*)&porUnidade, sizeof(porUnidade), 0);
-        if (bytesRecebidos == SOCKET_ERROR) {
-            cout << "Erro ao receber informação de tipo de compra. Código de erro: " << WSAGetLastError() << "\n";
-            break; 
-        } else if (bytesRecebidos == 0) {
-            cout << "Conexão encerrada pelo cliente.\n";
-            break; 
-        }
-
-        if (index == -1) { // Se o índice for -1, encerra a conexão
-            break; 
-        }
-
-        // Armazena o estado anterior
-        float quantidadeAnteriorKg = produtos[index].quantidadeKg;
-        int quantidadeAnteriorUnidade = produtos[index].quantidadeUnidade; // Manter como int
-
-        // Tenta atualizar a quantidade do produto
-        atualizarQuantidade(index, (float)quantidade, porUnidade); // Chama a função sem esperar retorno, convertendo quantidade para float se necessário
-
-        // Verifica se a atualização foi bem-sucedida por meio de mensagens já impressas
-        if (produtos[index].quantidadeKg == quantidadeAnteriorKg && produtos[index].quantidadeUnidade == quantidadeAnteriorUnidade) {
-            // Restaura o estoque se houve falha
-            produtos[index].quantidadeKg = quantidadeAnteriorKg;
-            produtos[index].quantidadeUnidade = quantidadeAnteriorUnidade;
-            salvarEstoque(); // Salva o estoque restaurado
-            cout << "Operação cancelada. Estoque restaurado.\n";
+    if (porUnidade) {
+        if (produtos[index].quantidadeUnidade >= quantidade) {
+            produtos[index].quantidadeUnidade -= quantidade;
+            cout<<"Produto " + produtos[index].nome + " atualizado: - " + to_string(quantidade) + " unidade(s).";
         } else {
-            salvarEstoque(); // Salva o estoque atualizado
-            cout << "Compra realizada com sucesso!\n";
+            cout<<"Quantidade insuficiente para o produto: " + produtos[index].nome;
+        }
+    } else {
+        if (produtos[index].quantidadeKg >= quantidade) {
+            produtos[index].quantidadeKg -= quantidade;
+            cout<<"Produto " + produtos[index].nome + " atualizado: - " + to_string(quantidade) + " kg.";
+        } else {
+            cout<<"Quantidade insuficiente para o produto: " + produtos[index].nome;
         }
     }
+}
+
+// Função para salvar o estoque em um arquivo
+void salvarEstoque() {
+    FILE *arquivo = fopen("estoque.txt", "w"); // Abre o arquivo estoque.txt em modo de escrita
+    if (arquivo == nullptr) { // Verifica se o arquivo foi aberto corretamente
+        cout << "Erro ao abrir arquivo de estoque.\n"; // Mensagem de erro
+        return; // Retorna da função se falhar
+    }
+    for (const auto& produto : produtos) {
+        fprintf(arquivo, "%s - R$ %.2f por kg - R$ %.2f por unidade - Quantidade: %.2f kg - Quantidade Unidades: %d\n",
+                produto.nome.c_str(), produto.precoPorKg, produto.precoPorUnidade, produto.quantidadeKg, produto.quantidadeUnidade);
+    }
+    fclose(arquivo); // Fecha o arquivo
+}
+
+void processarMensagem(SOCKET clienteSocket, int index, float quantidade, bool porUnidade) {
+    if (index == -1) {
+        return; // Encerra a conexão
+    }
+
+    float quantidadeAnteriorKg = produtos[index].quantidadeKg;
+    int quantidadeAnteriorUnidade = produtos[index].quantidadeUnidade;
+
+    atualizarQuantidade(index, quantidade, porUnidade);
+
+    if (produtos[index].quantidadeKg == quantidadeAnteriorKg && produtos[index].quantidadeUnidade == quantidadeAnteriorUnidade) {
+        produtos[index].quantidadeKg = quantidadeAnteriorKg;
+        produtos[index].quantidadeUnidade = quantidadeAnteriorUnidade;
+        salvarEstoque();
+        cout<<"Operacao cancelada estoque restaurado";
+    } else {
+        salvarEstoque();
+        cout<<"Compra realizada com sucesso";
+    }
+}
+
+// Função para enviar a lista de produtos ao cliente
+void enviarProdutos(SOCKET clienteSocket) {
+    int numeroDeProdutos = produtos.size();
+    send(clienteSocket, (char*)&numeroDeProdutos, sizeof(numeroDeProdutos), 0);
+    
+    for (const auto& produto : produtos) {
+        int nomeTamanho = produto.nome.size();
+        send(clienteSocket, (char*)&nomeTamanho, sizeof(nomeTamanho), 0);
+        send(clienteSocket, produto.nome.c_str(), nomeTamanho, 0);
+        send(clienteSocket, (char*)&produto.precoPorKg, sizeof(produto.precoPorKg), 0);
+        send(clienteSocket, (char*)&produto.quantidadeKg, sizeof(produto.quantidadeKg), 0);
+        send(clienteSocket, (char*)&produto.precoPorUnidade, sizeof(produto.precoPorUnidade), 0);
+        send(clienteSocket, (char*)&produto.quantidadeUnidade, sizeof(produto.quantidadeUnidade), 0);
+    }
+}
+
+// Função para processar a conexão com o cliente
+void processarConexao(SOCKET clienteSocket) {
+    enviarProdutos(clienteSocket); 
+
+    while (true) {
+        int index;
+        float quantidade; 
+        bool porUnidade; 
+
+        // Receber o índice do produto
+        if (recv(clienteSocket, (char*)&index, sizeof(index), 0) <= 0) break; 
+        index--;
+
+        // Receber a quantidade do produto (por unidade)
+        if (recv(clienteSocket, (char*)&quantidade, sizeof(quantidade), 0) <= 0) break;
+
+        // Receber se a compra é por unidade
+        if (recv(clienteSocket, (char*)&porUnidade, sizeof(porUnidade), 0) <= 0) break;
+
+        processarMensagem(clienteSocket, index, quantidade, porUnidade);
+    }
+}
+
+void carregarEstoque() {
+    FILE *arquivo = fopen("estoque.txt", "r"); // Abre o arquivo estoque.txt em modo de leitura
+    if (arquivo == nullptr) { // Verifica se o arquivo foi aberto corretamente
+        cout << "Arquivo de estoque não encontrado\n";
+        return;
+    }
+
+    produtos.clear();  // Limpa o vetor para recarregar
+    Produto temp;
+    char linhaBuffer[300];  // Buffer temporário para a linha
+
+    while (fgets(linhaBuffer, sizeof(linhaBuffer), arquivo)) {
+        linhaBuffer[strcspn(linhaBuffer, "\n")] = 0; 
+
+        cout << "Lendo linha: " << linhaBuffer << endl;
+
+        char nome[50]; // buffer temporário para o nome
+        if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - R$ %f por unidade - Quantidade: %f kg - Quantidade Unidades: %d",
+            nome, &temp.precoPorKg, &temp.precoPorUnidade, &temp.quantidadeKg, &temp.quantidadeUnidade) == 5) {
+            temp.nome = nome; // Copia o nome para o objeto Produto
+            produtos.push_back(temp);
+        } else {
+            cout << "Falha ao analisar a linha: " << linhaBuffer << endl;
+        }
+    }
+
+    estoqueOriginal = produtos;  // Atualiza o estoque original
+    fclose(arquivo); // Fecha o arquivo
 }
 
 // Função principal do servidor que gerencia o loop de conexão
@@ -238,7 +211,7 @@ void iniciarServidor() {
     // Configura o servidor
     SOCKET servidorSocket = configurarServidor(); // Chama a função para configurar o servidor
     if (servidorSocket == INVALID_SOCKET) { // Verifica se a configuração falhou
-        return; // Sai da função se houve erro
+        return; 
     }
 
     cout << "Aguardando conexões...\n"; 
@@ -248,12 +221,12 @@ void iniciarServidor() {
     if (clienteSocket == INVALID_SOCKET) { // Verifica se a conexão foi aceita corretamente
         closesocket(servidorSocket); // Fecha o socket do servidor
         WSACleanup(); // Limpa a Winsock
-        return; // Sai da função
+        return; 
     }
 
     cout << "Cliente conectado. Processando conexão...\n"; 
     // Processa a comunicação com o cliente
-    processarConexao(clienteSocket); // Chama a função para processar a conexão
+    processarConexao(clienteSocket); 
 
     // Fecha os sockets e limpa o Winsock
     closesocket(clienteSocket); // Fecha o socket do cliente
@@ -263,8 +236,8 @@ void iniciarServidor() {
 
 int main() {
     
-    carregarEstoque(); // Chama a função para carregar os produtos do arquivo
-    iniciarServidor(); // Chama a função para iniciar o servidor
+    carregarEstoque(); 
+    iniciarServidor(); 
 
     return 0;
 }
