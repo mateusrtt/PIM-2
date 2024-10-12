@@ -1,21 +1,21 @@
 #include <iostream> 
-#include <cstring> // Inclui a biblioteca para manipulação de strings e arrays
-#include <winsock2.h> // Inclui a biblioteca para uso de sockets no Windows
+#include <cstring> 
+#include <winsock2.h> 
 #include <vector>
 #include <fstream>
 #include <sstream>
 #include <string>
-#pragma comment(lib, "ws2_32.lib") // Indica ao linker para usar a biblioteca ws2_32.lib para Winsock
-#define PORTA 12345 // Define a porta que o servidor irá utilizar
+#pragma comment(lib, "ws2_32.lib") 
+#define PORTA 12345 
 using namespace std; 
 
 // Estrutura para representar um produto
 struct Produto {
-    string nome; // Nome do produto (até 50 caracteres)
-    float precoPorKg; // Preço por quilograma do produto
-    float precoPorUnidade; // Preço por unidade do produto
-    float quantidadeKg; // Quantidade disponível em kg
-    int quantidadeUnidade; // Quantidade disponível em unidades
+    string nome; 
+    float precoPorKg; 
+    float precoPorUnidade; 
+    float quantidadeKg; 
+    int quantidadeUnidade; 
 };
 
 // Declaração do vetor de produtos
@@ -168,10 +168,10 @@ SOCKET aceitarConexao(SOCKET servidorSocket) {
 
 // Função para processar a conexão com o cliente
 void processarConexao(SOCKET clienteSocket) {
-    int index; // Variável para armazenar o índice do produto
-    float quantidade; // Variável para armazenar a quantidade do produto
-    int bytesRecebidos; // Variável para armazenar a quantidade de bytes recebidos
-    bool porUnidade; // Indica se a compra é por unidade
+    int index;
+    float quantidade; 
+    int bytesRecebidos; 
+    bool porUnidade; 
 
     enviarProdutos(clienteSocket); // Envia a lista de produtos para o cliente
 
@@ -188,28 +188,28 @@ void processarConexao(SOCKET clienteSocket) {
 
         index--;  // Ajusta o índice para o array (começando em 0)
 
-               // Receber a quantidade do produto (por unidade)
+         // Receber a quantidade do produto (por unidade)
         bytesRecebidos = recv(clienteSocket, (char*)&quantidade, sizeof(quantidade), 0);
         if (bytesRecebidos == SOCKET_ERROR) {
             cout << "Erro ao receber quantidade. Código de erro: " << WSAGetLastError() << "\n";
-            break; // Sai do loop em caso de erro
+            break; 
         } else if (bytesRecebidos == 0) {
             cout << "Conexão encerrada pelo cliente.\n";
-            break; // Sai do loop
+            break; 
         }
 
         // Receber se a compra é por unidade
         bytesRecebidos = recv(clienteSocket, (char*)&porUnidade, sizeof(porUnidade), 0);
         if (bytesRecebidos == SOCKET_ERROR) {
             cout << "Erro ao receber informação de tipo de compra. Código de erro: " << WSAGetLastError() << "\n";
-            break; // Sai do loop em caso de erro
+            break; 
         } else if (bytesRecebidos == 0) {
             cout << "Conexão encerrada pelo cliente.\n";
-            break; // Sai do loop
+            break; 
         }
 
         if (index == -1) { // Se o índice for -1, encerra a conexão
-            break; // Termina a conexão
+            break; 
         }
 
         // Armazena o estado anterior
@@ -241,7 +241,7 @@ void iniciarServidor() {
         return; // Sai da função se houve erro
     }
 
-    cout << "Aguardando conexões...\n"; // Mensagem aguardando conexão
+    cout << "Aguardando conexões...\n"; 
 
     // Aceita conexão do cliente
     SOCKET clienteSocket = aceitarConexao(servidorSocket); // Aceita uma nova conexão
@@ -251,8 +251,7 @@ void iniciarServidor() {
         return; // Sai da função
     }
 
-    cout << "Cliente conectado. Processando conexão...\n"; // Mensagem de cliente conectado
-
+    cout << "Cliente conectado. Processando conexão...\n"; 
     // Processa a comunicação com o cliente
     processarConexao(clienteSocket); // Chama a função para processar a conexão
 
@@ -262,13 +261,10 @@ void iniciarServidor() {
     WSACleanup(); // Limpa a Winsock
 }
 
-// Função principal do programa
 int main() {
-    // Carrega o estoque inicial
-    carregarEstoque(); // Chama a função para carregar os produtos do arquivo
     
-    // Inicia o servidor
+    carregarEstoque(); // Chama a função para carregar os produtos do arquivo
     iniciarServidor(); // Chama a função para iniciar o servidor
 
-    return 0; // Retorna 0 ao sistema, indicando que o programa terminou com sucesso
+    return 0;
 }
