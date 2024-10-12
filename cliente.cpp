@@ -134,19 +134,8 @@ void receberProdutos(SOCKET clienteSocket) {
             WSACleanup();
             exit(1);
         }
-
         produtos.push_back(produto);
         estoqueOriginal.push_back(produto); // Copia para o estoque original
-    }
-
-    // Exibe os produtos
-    cout << fixed << setprecision(2);
-     for (size_t i = 0; i < produtos.size(); i++) {
-        cout << i + 1 << ". " << produtos[i].nome 
-             << " - R$ " << produtos[i].precoPorKg << " por kg - R$ " 
-             << produtos[i].precoPorUnidade << " por unidade - Quantidade: " 
-             << produtos[i].quantidadeKg << " kg - Quantidade Unidades: " 
-             << produtos[i].quantidadeUnidade << " unidades\n";
     }
 }
 
