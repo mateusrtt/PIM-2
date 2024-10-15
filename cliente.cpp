@@ -431,6 +431,39 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     }
 }
 
+bool analisaFloatValido(const string& entrada, float& saida){
+    if (entrada.empty()) return false;
+    string entradaLimpa = entrada; 
+    bool pontoDecimalEncontrado = false;
+
+    for (char& c : entradaLimpa) {
+        if (isdigit(c)) {
+            continue; 
+        }
+        if (c == '.' || c == ',') {
+            if (!pontoDecimalEncontrado) {
+                pontoDecimalEncontrado = true;
+                if (c == ',') {
+                    c = '.'; 
+                }
+            } else {
+                return false; 
+            }
+        } else {
+            return false; 
+        }
+    }
+    
+    try {
+        saida = stof(entradaLimpa);
+    } catch (invalid_argument&) {
+        return false; 
+    } catch (out_of_range&) {
+        return false; 
+    }
+    return true;
+}
+
 void estoqueAtual(){
     limparTela();
     mudaCor(1);
