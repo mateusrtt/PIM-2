@@ -442,16 +442,20 @@ void menuPrincipal(SOCKET clienteSocket) {
         mudaCor(1); 
         cout << "=========================================================================================================\n";
         cout << "1. Fazer uma compra \n";
-        cout << "2. Encerrar o caixa  \n"; 
+        cout << "2. Area Administrativa \n"; 
+        cout << "3. Encerrar o caixa  \n"; 
         cout << "=========================================================================================================\n";
         cout << "Escolha uma opcao: ";
-        int opcao = obterOpcaoValida(1, 2);
+        int opcao = obterOpcaoValida(1, 3);
 
         switch (opcao) {
             case 1:
                 realizarCompra(clienteSocket, produtos);
                 break;
             case 2:
+                //menuAdministrativo();
+                break;
+            case 3:
                 cout << "Sistema caixa encerrado...\n";
                 closesocket(clienteSocket); 
                 WSACleanup(); 
