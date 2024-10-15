@@ -523,6 +523,13 @@ void validarProduto(Produto& novoProduto){
     novoProduto.quantidadeUnidade = stoi(entrada);
 }
 
+void aguardarEntrada(){
+    cout << "Pressione qualquer tecla para voltar ao menu...\n";
+    cin.ignore(); 
+    cin.get();    
+    limparTela();
+}
+
 void estoqueAtual(){
     limparTela();
     mudaCor(1);
