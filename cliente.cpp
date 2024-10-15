@@ -120,6 +120,12 @@ bool isValidInteger(const string& input) {
     return all_of(input.begin(), input.end(), ::isdigit); // Verifica se todos os caracteres são dígitos
 }
 
+bool stringValida(const string& entrada) {
+    return !entrada.empty() && all_of(entrada.begin(), entrada.end(), [](unsigned char c) {
+        return isalpha(c) || isspace(c);
+    });
+}
+
 bool isValidFloat(const string& str) {
     istringstream iss(str);
     float f;
@@ -268,6 +274,15 @@ bool validarQuantidade(int formaCompra, const string& verificaQuantidade, float&
     return false; // Se não passar nas validações
 }
 
+int estoqueInsuficiente(){
+    cout << "Estoque insuficiente\n";
+    cout << " 1 - Deseja tentar novamente\n";
+    cout << " 2 - Voltar ao menu de produtos?\n";
+    cout << "=========================================================================================================\n";
+    cout << "Esoclha uma opcao: ";
+    return obterOpcaoValida(1, 2);
+}
+
 float obterQuantidade(int formaCompra, int escolha) {
     string verificaQuantidade; // Variável para verificar a quantidade
     float quantidade = 0.0;
@@ -288,7 +303,10 @@ float obterQuantidade(int formaCompra, int escolha) {
             return quantidade; // Retorna a quantidade válida
         }
 
-        cout << "Opcao invalida: \n"; 
+        int opcao = estoqueInsuficiente();
+        if (opcao == 2) {
+            return -1; // Indica que o usuário deseja voltar
+        }
     }
 }
 
@@ -351,6 +369,13 @@ void selecionarMetodoPagamento(float total, float& desconto, float& totalComDesc
     calcularDesconto(total, opcao, desconto, totalComDesconto, tipoPagamento);
 }
 
+void aguardarEntrada(){
+    cout << "Pressione qualquer tecla para voltar ao menu...\n";
+    cin.ignore(); 
+    cin.get();    
+    limparTela();
+}
+
 void finalizarCompra(const vector<Produto>& carrinho, float total) {
     if (carrinho.empty()) {
         cout << "Nenhum item adicionado ao carrinho.\n";
@@ -392,13 +417,8 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
     cout << "                             AGRADECEMOS SUA COMPRA VOLTE SEMPRE!!                                       \n";
     cout << "*********************************************************************************************************\n";
     salvarEstoque();
-
     mudaCor(15);
-    cout << "Pressione qualquer tecla para voltar ao menu principal...\n"; 
-    cin.ignore(); 
-    cin.get(); 
-
-    limparTela();
+    aguardarEntrada();
 }
 
 void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
@@ -416,7 +436,9 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
 
         int formaCompra = opcaoCompra();
         float quantidade = obterQuantidade(formaCompra, escolha);
-        if (quantidade <= 0) continue; // Se quantidade inválida, continua
+        if (quantidade == -1) {
+            continue; // Volta ao menu se a opção for voltar
+        }
 
         atualizarCarrinho(carrinho, formaCompra, quantidade, escolha, total);
         
@@ -427,6 +449,207 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
         } else if (opcaoContinuar == 3) {
             cancelarCompra(estoqueOriginal); // Cancela a compra
             return;
+        }
+    }
+}
+
+int obterIndiceValido(int tamanho){
+     string verificaOpcao;
+    int indice;
+    while (true) { 
+        cout << "Informe o indice do produto (1 a " << tamanho << "): ";
+        cin >> verificaOpcao; 
+
+        if (isValidInteger(verificaOpcao)) { 
+            indice = stoi(verificaOpcao); 
+            
+           
+            if (indice >= 1 && indice <= tamanho) {
+                return indice - 1; 
+            }
+        }
+        cout << "Indice invalido: \n";
+    }
+}
+
+bool analisaFloatValido(const string& entrada, float& saida){
+    if (entrada.empty()) return false;
+    string entradaLimpa = entrada; 
+    bool pontoDecimalEncontrado = false;
+
+    for (char& c : entradaLimpa) {
+        if (isdigit(c)) {
+            continue; 
+        }
+        if (c == '.' || c == ',') {
+            if (!pontoDecimalEncontrado) {
+                pontoDecimalEncontrado = true;
+                if (c == ',') {
+                    c = '.'; 
+                }
+            } else {
+                return false; 
+            }
+        } else {
+            return false; 
+        }
+    }
+    
+    try {
+        saida = stof(entradaLimpa);
+    } catch (invalid_argument&) {
+        return false; 
+    } catch (out_of_range&) {
+        return false; 
+    }
+    return true;
+}
+
+void validarProduto(Produto& novoProduto){
+    string entrada;
+    do {
+        cout << "Informe o nome do produto: ";
+        cin.ignore(); // Limpa o buffer
+        getline(cin, novoProduto.nome);
+    } while (!stringValida(novoProduto.nome));
+    
+    // Validação e conversão do preço por kg
+    do {
+        cout << "Informe o preco por kg: ";
+        cin >> entrada;
+    } while (!analisaFloatValido(entrada, novoProduto.precoPorKg));
+
+    // Validação e conversão do preço por unidade
+    do {
+        cout << "Informe o preco por unidade: ";
+        cin >> entrada;
+    } while (!analisaFloatValido(entrada, novoProduto.precoPorUnidade));
+
+    // Validação e conversão da quantidade em kg
+    do {
+        cout << "Informe a quantidade em kg: ";
+        cin >> entrada;
+    } while (!analisaFloatValido(entrada, novoProduto.quantidadeKg));
+
+    // Validação da quantidade em unidades
+    do {
+        cout << "Informe a quantidade em unidades: ";
+        cin >> entrada;
+    } while (!isValidInteger(entrada));
+    novoProduto.quantidadeUnidade = stoi(entrada);
+}
+
+void estoqueAtual(){
+    limparTela();
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    mudaCor(1,6);
+    cout << "                                      ESTOQUE ATUAL                                                     \n";
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    for (size_t i = 0; i < produtos.size(); ++i) {
+        const auto& produto = produtos[i];
+        cout << (i+1)<< ". " << produto.nome << " - R$ " << produto.precoPorKg << " por kg - "
+             << "R$ " << produto.precoPorUnidade << " por unidade - "
+             << "Quantidade: " << produto.quantidadeKg << " kg - "
+             << "Quantidade Unidades: " << produto.quantidadeUnidade << endl;
+    cout <<"=========================================================================================================\n";
+    }
+}
+
+void adicionarProduto(){
+    limparTela();
+    estoqueAtual();
+    Produto novoProduto;
+    validarProduto(novoProduto); 
+    produtos.push_back(novoProduto); 
+    salvarEstoque();
+    limparTela();
+    estoqueAtual();
+    cout << "Produto adicionado com sucesso!\n";
+    aguardarEntrada();
+}
+
+void removerProduto(){
+    limparTela();
+    estoqueAtual();
+    int indice = obterIndiceValido(produtos.size()); 
+    produtos.erase(produtos.begin() + indice); 
+    salvarEstoque();
+    limparTela();
+    estoqueAtual();
+    cout << "Produto removido com sucesso!\n";
+    aguardarEntrada();
+}
+
+void alterarProduto(){
+    limparTela();
+    estoqueAtual();
+    int indice = obterIndiceValido(produtos.size()); 
+    Produto& produto = produtos[indice]; 
+    validarProduto(produto); 
+    salvarEstoque(); 
+    cout << "Produto alterado com sucesso!\n";
+    aguardarEntrada();
+}
+
+void verificarSenha(){
+    limparTela();
+    const string senhaCorreta = "admin123"; 
+    string senhaInformada;
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    mudaCor(1,6);
+    cout <<"                                       AREA ADMINISTRATIVA                                               \n";
+    cout <<"                               ACESSO SOMENTE PARA PESSOAS AUTORIZADAS                                   \n";
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    while (true) {
+        cout << "Digite a senha: ";
+        cin >> senhaInformada;
+        if (senhaInformada == senhaCorreta) {
+            cout << "Senha valida\n";
+            break; 
+        } else {
+            cout << "Senha invalida: \n";
+        }
+    }
+}
+
+void menuAdministrativo(){
+    verificarSenha();
+    limparTela();
+    while (true) {
+        mudaCor(1);
+        cout <<"=========================================================================================================\n";
+        mudaCor(1,6);
+        cout << "                                      MENU ADMINISTRATIVO                                               \n";
+        mudaCor(1);
+        cout <<"=========================================================================================================\n";
+        cout << "1. Adicionar Produto\n";
+        cout << "2. Remover Produto\n";
+        cout << "3. Alterar Produto\n";
+        cout << "4. Sair da area administrativa\n"; 
+        cout <<"=========================================================================================================\n";
+        cout << "Escolha uma opcao: ";
+        int opcao = obterOpcaoValida(1, 4);
+
+        switch (opcao) {
+            case 1:
+                adicionarProduto();
+                break;
+            case 2:
+                removerProduto();
+                break;
+            case 3:
+                alterarProduto();
+                break;
+            case 4:
+                cout << "Saindo da área administrativa...\n";
+                return; 
+            default:
+                cout << "Opcao invalida: \n";
+                break;
         }
     }
 }
@@ -442,16 +665,20 @@ void menuPrincipal(SOCKET clienteSocket) {
         mudaCor(1); 
         cout << "=========================================================================================================\n";
         cout << "1. Fazer uma compra \n";
-        cout << "2. Encerrar o caixa  \n"; 
+        cout << "2. Area Administrativa \n"; 
+        cout << "3. Encerrar o caixa  \n"; 
         cout << "=========================================================================================================\n";
         cout << "Escolha uma opcao: ";
-        int opcao = obterOpcaoValida(1, 2);
+        int opcao = obterOpcaoValida(1, 3);
 
         switch (opcao) {
             case 1:
                 realizarCompra(clienteSocket, produtos);
                 break;
             case 2:
+                menuAdministrativo();
+                break;
+            case 3:
                 cout << "Sistema caixa encerrado...\n";
                 closesocket(clienteSocket); 
                 WSACleanup(); 
