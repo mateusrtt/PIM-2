@@ -431,6 +431,45 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     }
 }
 
+void menuAdministrativo(){
+    limparTela();
+    while (true) {
+        mudaCor(1);
+        cout <<"=========================================================================================================\n";
+        mudaCor(1,6);
+        cout << "                                      MENU ADMINISTRATIVO                                               \n";
+        mudaCor(1);
+        cout <<"=========================================================================================================\n";
+        cout << "1. Adicionar Produto\n";
+        cout << "2. Remover Produto\n";
+        cout << "3. Alterar Produto\n";
+        cout << "4. Sair da area administrativa\n"; 
+        cout <<"=========================================================================================================\n";
+        cout << "Escolha uma opcao: ";
+        int opcao = obterOpcaoValida(1, 4);
+
+        switch (opcao) {
+            case 1:
+                //adicionarProduto();
+                break;
+            case 2:
+                //removerProduto();
+                break;
+            case 3:
+                //alterarProduto();
+                break;
+            case 4:
+                cout << "Saindo da área administrativa...\n";
+                return; 
+            default:
+                cout << "Opcao invalida: \n";
+                break;
+        }
+    }
+}
+
+
+
 // Função que exibe o menu principal
 void menuPrincipal(SOCKET clienteSocket) {
     while (true) {
@@ -453,7 +492,7 @@ void menuPrincipal(SOCKET clienteSocket) {
                 realizarCompra(clienteSocket, produtos);
                 break;
             case 2:
-                //menuAdministrativo();
+                menuAdministrativo();
                 break;
             case 3:
                 cout << "Sistema caixa encerrado...\n";
