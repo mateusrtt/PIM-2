@@ -436,7 +436,9 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
 
         int formaCompra = opcaoCompra();
         float quantidade = obterQuantidade(formaCompra, escolha);
-        if (quantidade <= 0) continue; // Se quantidade inválida, continua
+        if (quantidade == -1) {
+            continue; // Volta ao menu se a opção for voltar
+        }
 
         atualizarCarrinho(carrinho, formaCompra, quantidade, escolha, total);
         
