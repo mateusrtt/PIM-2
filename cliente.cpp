@@ -561,6 +561,17 @@ void adicionarProduto(){
     aguardarEntrada();
 }
 
+void removerProduto(){
+    limparTela();
+    estoqueAtual();
+    int indice = obterIndiceValido(produtos.size()); 
+    produtos.erase(produtos.begin() + indice); 
+    salvarEstoque();
+    limparTela();
+    estoqueAtual();
+    cout << "Produto removido com sucesso!\n";
+    aguardarEntrada();
+}
 
 void verificarSenha(){
     limparTela();
