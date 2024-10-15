@@ -431,7 +431,31 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     }
 }
 
+void verificarSenha(){
+    limparTela();
+    const string senhaCorreta = "admin123"; 
+    string senhaInformada;
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    mudaCor(1,6);
+    cout <<"                                       AREA ADMINISTRATIVA                                               \n";
+    cout <<"                               ACESSO SOMENTE PARA PESSOAS AUTORIZADAS                                   \n";
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    while (true) {
+        cout << "Digite a senha: ";
+        cin >> senhaInformada;
+        if (senhaInformada == senhaCorreta) {
+            cout << "Senha valida\n";
+            break; 
+        } else {
+            cout << "Senha invalida: \n";
+        }
+    }
+}
+
 void menuAdministrativo(){
+    verificarSenha();
     limparTela();
     while (true) {
         mudaCor(1);
