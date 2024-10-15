@@ -303,7 +303,10 @@ float obterQuantidade(int formaCompra, int escolha) {
             return quantidade; // Retorna a quantidade válida
         }
 
-        cout << "Opcao invalida: \n"; 
+        int opcao = estoqueInsuficiente();
+        if (opcao == 2) {
+            return -1; // Indica que o usuário deseja voltar
+        }
     }
 }
 
