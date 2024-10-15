@@ -489,6 +489,40 @@ bool analisaFloatValido(const string& entrada, float& saida){
     return true;
 }
 
+void validarProduto(Produto& novoProduto){
+    string entrada;
+    do {
+        cout << "Informe o nome do produto: ";
+        cin.ignore(); // Limpa o buffer
+        getline(cin, novoProduto.nome);
+    } while (!stringValida(novoProduto.nome));
+    
+    // Validação e conversão do preço por kg
+    do {
+        cout << "Informe o preço por kg: ";
+        cin >> entrada;
+    } while (!analisaFloatValido(entrada, novoProduto.precoPorKg));
+
+    // Validação e conversão do preço por unidade
+    do {
+        cout << "Informe o preço por unidade: ";
+        cin >> entrada;
+    } while (!analisaFloatValido(entrada, novoProduto.precoPorUnidade));
+
+    // Validação e conversão da quantidade em kg
+    do {
+        cout << "Informe a quantidade em kg: ";
+        cin >> entrada;
+    } while (!analisaFloatValido(entrada, novoProduto.quantidadeKg));
+
+    // Validação da quantidade em unidades
+    do {
+        cout << "Informe a quantidade em unidades: ";
+        cin >> entrada;
+    } while (!isValidInteger(entrada));
+    novoProduto.quantidadeUnidade = stoi(entrada);
+}
+
 void estoqueAtual(){
     limparTela();
     mudaCor(1);
