@@ -274,6 +274,15 @@ bool validarQuantidade(int formaCompra, const string& verificaQuantidade, float&
     return false; // Se não passar nas validações
 }
 
+int estoqueInsuficiente(){
+    cout << "Estoque insuficiente\n";
+    cout << " 1 - Deseja tentar novamente\n";
+    cout << " 2 - Voltar ao menu de produtos?\n";
+    cout << "=========================================================================================================\n";
+    cout << "Esoclha uma opcao: ";
+    return obterOpcaoValida(1, 2);
+}
+
 float obterQuantidade(int formaCompra, int escolha) {
     string verificaQuantidade; // Variável para verificar a quantidade
     float quantidade = 0.0;
@@ -405,7 +414,6 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
     cout << "                             AGRADECEMOS SUA COMPRA VOLTE SEMPRE!!                                       \n";
     cout << "*********************************************************************************************************\n";
     salvarEstoque();
-
     mudaCor(15);
     aguardarEntrada();
 }
