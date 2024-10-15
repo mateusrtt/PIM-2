@@ -573,6 +573,17 @@ void removerProduto(){
     aguardarEntrada();
 }
 
+void alterarProduto(){
+    limparTela();
+    estoqueAtual();
+    int indice = obterIndiceValido(produtos.size()); 
+    Produto& produto = produtos[indice]; 
+    validarProduto(produto); 
+    salvarEstoque(); 
+    cout << "Produto alterado com sucesso!\n";
+    aguardarEntrada();
+}
+
 void verificarSenha(){
     limparTela();
     const string senhaCorreta = "admin123"; 
