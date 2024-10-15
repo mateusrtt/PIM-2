@@ -515,13 +515,13 @@ void validarProduto(Produto& novoProduto){
     
     // Validação e conversão do preço por kg
     do {
-        cout << "Informe o preço por kg: ";
+        cout << "Informe o preco por kg: ";
         cin >> entrada;
     } while (!analisaFloatValido(entrada, novoProduto.precoPorKg));
 
     // Validação e conversão do preço por unidade
     do {
-        cout << "Informe o preço por unidade: ";
+        cout << "Informe o preco por unidade: ";
         cin >> entrada;
     } while (!analisaFloatValido(entrada, novoProduto.precoPorUnidade));
 
