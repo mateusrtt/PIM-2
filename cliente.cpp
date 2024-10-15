@@ -431,6 +431,25 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     }
 }
 
+int obterIndiceValido(int tamanho){
+     string verificaOpcao;
+    int indice;
+    while (true) { 
+        cout << "Informe o indice do produto (1 a " << tamanho << "): ";
+        cin >> verificaOpcao; 
+
+        if (isValidInteger(verificaOpcao)) { 
+            indice = stoi(verificaOpcao); 
+            
+           
+            if (indice >= 1 && indice <= tamanho) {
+                return indice - 1; 
+            }
+        }
+        cout << "Indice invalido: \n";
+    }
+}
+
 bool analisaFloatValido(const string& entrada, float& saida){
     if (entrada.empty()) return false;
     string entradaLimpa = entrada; 
