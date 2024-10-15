@@ -548,6 +548,20 @@ void estoqueAtual(){
     }
 }
 
+void adicionarProduto(){
+    limparTela();
+    estoqueAtual();
+    Produto novoProduto;
+    validarProduto(novoProduto); 
+    produtos.push_back(novoProduto); 
+    salvarEstoque();
+    limparTela();
+    estoqueAtual();
+    cout << "Produto adicionado com sucesso!\n";
+    aguardarEntrada();
+}
+
+
 void verificarSenha(){
     limparTela();
     const string senhaCorreta = "admin123"; 
