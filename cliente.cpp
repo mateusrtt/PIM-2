@@ -431,6 +431,24 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     }
 }
 
+void estoqueAtual(){
+    limparTela();
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    mudaCor(1,6);
+    cout << "                                      ESTOQUE ATUAL                                                     \n";
+    mudaCor(1);
+    cout <<"=========================================================================================================\n";
+    for (size_t i = 0; i < produtos.size(); ++i) {
+        const auto& produto = produtos[i];
+        cout << (i+1)<< ". " << produto.nome << " - R$ " << produto.precoPorKg << " por kg - "
+             << "R$ " << produto.precoPorUnidade << " por unidade - "
+             << "Quantidade: " << produto.quantidadeKg << " kg - "
+             << "Quantidade Unidades: " << produto.quantidadeUnidade << endl;
+    cout <<"=========================================================================================================\n";
+    }
+}
+
 void verificarSenha(){
     limparTela();
     const string senhaCorreta = "admin123"; 
