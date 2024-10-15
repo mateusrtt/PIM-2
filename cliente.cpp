@@ -357,6 +357,13 @@ void selecionarMetodoPagamento(float total, float& desconto, float& totalComDesc
     calcularDesconto(total, opcao, desconto, totalComDesconto, tipoPagamento);
 }
 
+void aguardarEntrada(){
+    cout << "Pressione qualquer tecla para voltar ao menu...\n";
+    cin.ignore(); 
+    cin.get();    
+    limparTela();
+}
+
 void finalizarCompra(const vector<Produto>& carrinho, float total) {
     if (carrinho.empty()) {
         cout << "Nenhum item adicionado ao carrinho.\n";
@@ -400,11 +407,7 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
     salvarEstoque();
 
     mudaCor(15);
-    cout << "Pressione qualquer tecla para voltar ao menu principal...\n"; 
-    cin.ignore(); 
-    cin.get(); 
-
-    limparTela();
+    aguardarEntrada();
 }
 
 void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
@@ -523,13 +526,6 @@ void validarProduto(Produto& novoProduto){
     novoProduto.quantidadeUnidade = stoi(entrada);
 }
 
-void aguardarEntrada(){
-    cout << "Pressione qualquer tecla para voltar ao menu...\n";
-    cin.ignore(); 
-    cin.get();    
-    limparTela();
-}
-
 void estoqueAtual(){
     limparTela();
     mudaCor(1);
@@ -644,8 +640,6 @@ void menuAdministrativo(){
         }
     }
 }
-
-
 
 // Função que exibe o menu principal
 void menuPrincipal(SOCKET clienteSocket) {
