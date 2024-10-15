@@ -18,45 +18,45 @@ struct Produto {
     int quantidadeUnidade; 
 };
 
-vector<Produto> produtos;  // Vetor para armazenar os produtos do arquivo
-vector<Produto> estoqueOriginal;  // Cópia do estoque inicial
+//Um vetor para armazenar os produtos do arquivo e outro vetor  
+vector<Produto> produtos;  
+vector<Produto> estoqueOriginal; 
 
-// Função para configurar o socket do servidor
+//Função configurarServidor: Responsável por inicializar um servidor TCP utilizando a API Winsock
 SOCKET configurarServidor() {
     WSADATA wsaData; // Estrutura para armazenar informações da Winsock
     SOCKET servidorSocket; // Variável para o socket do servidor
-    struct sockaddr_in servidorAddr; // Estrutura para armazenar informações do endereço do servidor
 
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) { // Inicializa a Winsock
-        cout << "Falha ao inicializar Winsock. Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
-        return INVALID_SOCKET; // Retorna socket inválido em caso de erro
-    }
-
-    servidorSocket = socket(AF_INET, SOCK_STREAM, 0); // Cria um socket TCP
-    if (servidorSocket == INVALID_SOCKET) { // Verifica se o socket foi criado corretamente
-        cout << "Erro ao criar o socket. Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
-        WSACleanup(); // Limpa a Winsock
-        return INVALID_SOCKET; // Retorna socket inválido em caso de erro
-    }
-
+    struct sockaddr_in servidorAddr={0}; 
     servidorAddr.sin_family = AF_INET; // Define a família do endereço como IPv4
     servidorAddr.sin_addr.s_addr = INADDR_ANY; // Define o endereço IP para aceitar conexões de qualquer interface
     servidorAddr.sin_port = htons(PORTA); // Define a porta do servidor (converte para a ordem correta)
 
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0) { // Inicializa a Winsock
+        cout << "Falha ao inicializar Winsock. Código de erro: " << WSAGetLastError() << "\n"; 
+        return INVALID_SOCKET; 
+    }
+
+    servidorSocket = socket(AF_INET, SOCK_STREAM, 0); // Cria um socket TCP
+    if (servidorSocket == INVALID_SOCKET) { // Verifica se o socket foi criado corretamente
+        cout << "Erro ao criar o socket. Código de erro: " << WSAGetLastError() << "\n"; 
+        return INVALID_SOCKET; 
+    }
+
     // Faz o bind do socket a um endereço e porta
     if (bind(servidorSocket, (struct sockaddr*)&servidorAddr, sizeof(servidorAddr)) == SOCKET_ERROR) {
-        cout << "Erro ao fazer bind. Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
-        closesocket(servidorSocket); // Fecha o socket em caso de erro
-        WSACleanup(); // Limpa a Winsock
-        return INVALID_SOCKET; // Retorna socket inválido
+        cout << "Erro ao fazer bind. Código de erro: " << WSAGetLastError() << "\n"; 
+        closesocket(servidorSocket); 
+        WSACleanup(); 
+        return INVALID_SOCKET; 
     }
 
     // Configura o socket para ouvir conexões
     if (listen(servidorSocket, 1) == SOCKET_ERROR) {
-        cout << "Erro ao ouvir conexões. Código de erro: " << WSAGetLastError() << "\n"; // Mensagem de erro
-        closesocket(servidorSocket); // Fecha o socket em caso de erro
-        WSACleanup(); // Limpa a Winsock
-        return INVALID_SOCKET; // Retorna socket inválido
+        cout << "Erro ao ouvir conexões. Código de erro: " << WSAGetLastError() << "\n";
+        closesocket(servidorSocket); 
+        WSACleanup(); 
+        return INVALID_SOCKET; 
     }
     return servidorSocket; // Retorna o socket do servidor configurado
 }
