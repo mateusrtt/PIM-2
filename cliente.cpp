@@ -627,13 +627,13 @@ void menuAdministrativo(){
 
         switch (opcao) {
             case 1:
-                //adicionarProduto();
+                adicionarProduto();
                 break;
             case 2:
-                //removerProduto();
+                removerProduto();
                 break;
             case 3:
-                //alterarProduto();
+                alterarProduto();
                 break;
             case 4:
                 cout << "Saindo da área administrativa...\n";
