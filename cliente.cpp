@@ -120,6 +120,12 @@ bool isValidInteger(const string& input) {
     return all_of(input.begin(), input.end(), ::isdigit); // Verifica se todos os caracteres são dígitos
 }
 
+bool stringValida(const string& entrada) {
+    return !entrada.empty() && all_of(entrada.begin(), entrada.end(), [](unsigned char c) {
+        return isalpha(c) || isspace(c);
+    });
+}
+
 bool isValidFloat(const string& str) {
     istringstream iss(str);
     float f;
