@@ -21,6 +21,10 @@ struct Produto {
     int quantidadeUnidade;
 };
 
+void mudaCor(int corTexto, int corFundo = 0);
+void menuPrincipal(SOCKET clienteSocket);
+void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Produto>& estoqueOriginal);
+
 extern vector<Produto> produtos; // Declaração do vetor global de produtos
 extern vector<Produto> estoqueOriginal; // Declaração do vetor global de estoque original
 
