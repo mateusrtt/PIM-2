@@ -1,10 +1,9 @@
 #include "cliente.h"
 #include "sockets.h"
 
-vector<Produto> produtos; // Usando vector para gerenciar a lista de produtos
-vector<Produto> estoqueOriginal; // Estoque original para restauração
+vector<Produto> produtos; 
+vector<Produto> estoqueOriginal; 
 
-// Função para receber produtos do servidor
 void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Produto>& estoqueOriginal) {
     int numeroDeProdutos;
     if (recv(clienteSocket, (char*)&numeroDeProdutos, sizeof(int), 0) == SOCKET_ERROR) {
@@ -24,7 +23,6 @@ void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Pro
             exit(1);
         }
 
-        // Usando std::string para gerenciar a memória
         vector<char> nomeBuffer(nomeTamanho + 1);
         if (recv(clienteSocket, nomeBuffer.data(), nomeTamanho, 0) == SOCKET_ERROR) {
             cout << "Erro ao receber o nome do produto. Código de erro: " << WSAGetLastError() << "\n";
@@ -33,7 +31,7 @@ void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Pro
             exit(1);
         }
 
-        nomeBuffer[nomeTamanho] = '\0'; // Adiciona o terminador de string
+        nomeBuffer[nomeTamanho] = '\0'; 
         produto.nome = string(nomeBuffer.data());
 
         // Recebe preço e quantidade
@@ -48,23 +46,23 @@ void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Pro
         }
 
         produtos.push_back(produto);
-        estoqueOriginal.push_back(produto); // Copia para o estoque original
+        estoqueOriginal.push_back(produto); 
     }
 }
 
 // Função para obter a data e hora formatada
 void obterDataHora(char *buffer, size_t tamanho) {
-    time_t t; // Variável para armazenar o tempo atual
-    struct tm *tm_info; // Estrutura para armazenar informações da data/hora
+    time_t t; 
+    struct tm *tm_info; 
 
-    time(&t); // Obtém o tempo atual
-    tm_info = localtime(&t); // Converte para a hora local
-    strftime(buffer, tamanho, "%d/%m/%Y %H:%M:%S", tm_info); // Formata a data/hora
+    time(&t); 
+    tm_info = localtime(&t); 
+    strftime(buffer, tamanho, "%d/%m/%Y %H:%M:%S", tm_info); 
 }
 
 bool inteiroValido(const string& entrada) {
-    if (entrada.empty()) return false; // Verifica se a entrada não está vazia
-    return all_of(entrada.begin(), entrada.end(), ::isdigit); // Verifica se todos os caracteres são dígitos
+    if (entrada.empty()) return false; 
+    return all_of(entrada.begin(), entrada.end(), ::isdigit); 
 }
 
 bool stringValida(const string& entrada) {
@@ -76,31 +74,29 @@ bool stringValida(const string& entrada) {
 bool floatValido(const string& entrada, float& saida) {
     if (entrada.empty()) return false;
 
-    // Substitui vírgula por ponto
     string entradaLimpa = entrada;
     for (char& c : entradaLimpa) {
         if (c == ',') {
             c = '.';
         }
     }
-    // Tenta converter a string para float
+    
     try {
         saida = stof(entradaLimpa);
     } catch (const invalid_argument&) {
-        return false; // Não é um número válido
+        return false; 
     } catch (const out_of_range&) {
-        return false; // O número está fora do intervalo
+        return false; 
     }
 
-    // Verifica se a string contém apenas dígitos e no máximo um ponto
     int pontoDecimalCount = 0;
     for (char c : entradaLimpa) {
         if (!isdigit(c) && c != '.') {
-            return false; // Caractere inválido
+            return false; 
         }
         if (c == '.') {
             pontoDecimalCount++;
-            if (pontoDecimalCount > 1) return false; // Mais de um ponto decimal
+            if (pontoDecimalCount > 1) return false; 
         }
     }
     return true;
@@ -137,32 +133,32 @@ int obterOpcaoValida(int min, int max) {
     string verificaOpcao;
     int opcao;
 
-    while (true) {  // Loop até obter uma entrada válida
-        cin >> verificaOpcao; // Lê a entrada
-        if (inteiroValido(verificaOpcao)) { // Verifica se é um número inteiro
-            opcao = stoi(verificaOpcao); // Converte para inteiro
+    while (true) {  
+        cin >> verificaOpcao; 
+        if (inteiroValido(verificaOpcao)) { 
+            opcao = stoi(verificaOpcao);
             if (opcao >= min && opcao <= max) {
-                return opcao; // Retorna a opção válida
+                return opcao; 
             }
         }
-        cout << "Opcao invalida: "; // Mensagem de erro
+        cout << "Opçao invalida: "; 
     }
 }
 
 void calcularDesconto(float total, int opcao, float& desconto, float& totalComDesconto, string& tipoPagamento) {
-    desconto = 0.0; // Inicializa o desconto
-    totalComDesconto = total; // Inicializa o total após desconto
-    // Calcula o desconto com base na opção escolhida
+    desconto = 0.0; 
+    totalComDesconto = total; 
+    
     if (opcao == 1) {
-        desconto = total * 0.10; // 10% de desconto
+        desconto = total * 0.10; 
         tipoPagamento = "Dinheiro";
     } else if (opcao == 2) {
-        desconto = total * 0.05; // 5% de desconto
+        desconto = total * 0.05; 
         tipoPagamento = "Pix";
     } else {
-        tipoPagamento = "Cartão de Crédito"; // Sem desconto
+        tipoPagamento = "Cartao de Credito"; 
     }
-    totalComDesconto -= desconto; // Atualiza o total com desconto
+    totalComDesconto -= desconto; 
 }
 
 // Função para exibir o menu de produtos
@@ -205,7 +201,7 @@ int selecionaProduto(){
 }
 
 void cancelarCompra(vector<Produto>& estoqueOriginal){
-    produtos = estoqueOriginal; // Restaura o estoque original
+    produtos = estoqueOriginal; 
     salvarEstoque(); 
 }
 
@@ -223,25 +219,24 @@ int opcaoCompra(){
 }
 
 bool validarQuantidade(int formaCompra, const string& verificaQuantidade, float& quantidade, int escolha) {
-    // Verifica se a entrada é válida de acordo com a forma de compra
-    if (formaCompra == 1) { // Compra em kg
+    if (formaCompra == 1) { 
         if (floatValido(verificaQuantidade, quantidade)) {
-            quantidade = stof(verificaQuantidade); // Converte para float
+            quantidade = stof(verificaQuantidade); 
             if (quantidade > 0 && quantidade <= produtos[escolha - 1].quantidadeKg) {
-                produtos[escolha - 1].quantidadeKg -= quantidade; // Atualiza a quantidade em kg
+                produtos[escolha - 1].quantidadeKg -= quantidade; 
                 return true;
             }
         }
-    } else { // Compra em unidades
+    } else { 
         if (inteiroValido(verificaQuantidade)) {
-            quantidade = stoi(verificaQuantidade); // Converte para int
+            quantidade = stoi(verificaQuantidade); 
             if (quantidade > 0 && quantidade <= produtos[escolha - 1].quantidadeUnidade) {
-                produtos[escolha - 1].quantidadeUnidade -= quantidade; // Atualiza a quantidade em unidades
+                produtos[escolha - 1].quantidadeUnidade -= quantidade; 
                 return true;
             }
         }
     }
-    return false; // Se não passar nas validações
+    return false; 
 }
 
 int estoqueInsuficiente(){
@@ -254,7 +249,7 @@ int estoqueInsuficiente(){
 }
 
 float obterQuantidade(int formaCompra, int escolha) {
-    string verificaQuantidade; // Variável para verificar a quantidade
+    string verificaQuantidade; 
     float quantidade = 0.0;
 
     while (true) {
@@ -265,39 +260,36 @@ float obterQuantidade(int formaCompra, int escolha) {
         }
         cin >> verificaQuantidade;
 
-        // Substitui vírgula por ponto para permitir entrada decimal
         replace(verificaQuantidade.begin(), verificaQuantidade.end(), ',', '.');
 
-        // Chama a função de validação
         if (validarQuantidade(formaCompra, verificaQuantidade, quantidade, escolha)) {
-            return quantidade; // Retorna a quantidade válida
+            return quantidade;
         }
 
         int opcao = estoqueInsuficiente();
 
         if (opcao == 2) {
-            return -1; // Indica que o usuário deseja voltar
+            return -1; 
         }
     }
 }
 
 void atualizarCarrinho(vector<Produto>& carrinho, int formaCompra, float quantidade, int escolha, float& total) {
-    if (formaCompra == 1) { // Comprando por kg
+    if (formaCompra == 1) { 
         total += produtos[escolha - 1].precoPorKg * quantidade;
-    } else { // Comprando por unidade
+    } else { 
         total += produtos[escolha - 1].precoPorUnidade * quantidade;
     }
 
     salvarEstoque();
 
-    // Atualiza o carrinho
     bool produtoEncontrado = false;
     for (auto& item : carrinho) {
         if (item.nome == produtos[escolha - 1].nome) {
             if (formaCompra == 1) {
-                item.quantidadeKg += quantidade; // Atualiza a quantidade em kg
+                item.quantidadeKg += quantidade; 
             } else {
-                item.quantidadeUnidade += quantidade; // Atualiza a quantidade em unidades
+                item.quantidadeUnidade += quantidade; 
             }
             produtoEncontrado = true;
             break;
@@ -306,8 +298,8 @@ void atualizarCarrinho(vector<Produto>& carrinho, int formaCompra, float quantid
 
     if (!produtoEncontrado) {
         Produto novoProduto = produtos[escolha - 1];
-        novoProduto.quantidadeKg = formaCompra == 1 ? quantidade : 0; // Inicializa kg
-        novoProduto.quantidadeUnidade = formaCompra == 2 ? quantidade : 0; // Inicializa unidades
+        novoProduto.quantidadeKg = formaCompra == 1 ? quantidade : 0; 
+        novoProduto.quantidadeUnidade = formaCompra == 2 ? quantidade : 0; 
         carrinho.push_back(novoProduto);
     }
 
@@ -357,13 +349,12 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
     float totalComDesconto;
     string tipoPagamento;
 
-    // Seleciona o método de pagamento e calcula total com desconto
     selecionarMetodoPagamento(total, desconto, totalComDesconto, tipoPagamento);
 
     limparTela();
 
-    // Obtém data e hora
-    char dataHora[20]; // Declara um buffer para armazenar a data e hora
+   
+    char dataHora[20]; 
     obterDataHora(dataHora, sizeof(dataHora)); 
     mudaCor(6);
     cout << "*********************************************************************************************************\n";
@@ -394,11 +385,11 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
 
 void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     limparTela(); 
-    vector<Produto> carrinho; // Usando vector para o carrinho
+    vector<Produto> carrinho; 
     float total = 0.0;
-    vector<Produto> estoqueOriginal = produtos; // Armazena o estoque original
+    vector<Produto> estoqueOriginal = produtos; 
 
-    while (true) { // Loop para adicionar produtos
+    while (true) { 
         int escolha = selecionaProduto();
         if (escolha == 0) {
             cancelarCompra(estoqueOriginal);
@@ -408,17 +399,17 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
         int formaCompra = opcaoCompra();
         float quantidade = obterQuantidade(formaCompra, escolha);
         if (quantidade == -1) {
-            continue; // Volta ao menu se a opção for voltar
+            continue; 
         }
 
         atualizarCarrinho(carrinho, formaCompra, quantidade, escolha, total);
         
-        int opcaoContinuar = continuarComprando(); // Captura a opção escolhida
+        int opcaoContinuar = continuarComprando(); 
         if (opcaoContinuar == 2) {
             finalizarCompra(carrinho, total);
             return;
         } else if (opcaoContinuar == 3) {
-            cancelarCompra(estoqueOriginal); // Cancela a compra
+            cancelarCompra(estoqueOriginal); 
             return;
         }
     }
@@ -457,19 +448,19 @@ void validarProduto(Produto& novoProduto) {
 
     // Validação e conversão do preço por kg
     do {
-        cout << "Informe o preço por kg: ";
+        cout << "Informe o preco por kg: ";
         cin >> entrada;
         if (!floatValido(entrada, novoProduto.precoPorKg)) {
-            cout << "Preço por kg invalido: " << endl;
+            cout << "Preco por kg invalido: " << endl;
         }
     } while (!floatValido(entrada, novoProduto.precoPorKg));
 
     // Validação e conversão do preço por unidade
     do {
-        cout << "Informe o preço por unidade: ";
+        cout << "Informe o preco por unidade: ";
         cin >> entrada;
         if (!floatValido(entrada, novoProduto.precoPorUnidade)) {
-            cout << "Preço por unidade invalido: " << endl;
+            cout << "Preco por unidade invalido: " << endl;
         }
     } while (!floatValido(entrada, novoProduto.precoPorUnidade));
 
@@ -478,7 +469,7 @@ void validarProduto(Produto& novoProduto) {
         cout << "Informe a quantidade em kg: ";
         cin >> entrada;
         if (!floatValido(entrada, novoProduto.quantidadeKg)) {
-            cout << "Quantidade em kg inválida: " << endl;
+            cout << "Quantidade em kg invalida: " << endl;
         }
     } while (!floatValido(entrada, novoProduto.quantidadeKg));
 
@@ -495,32 +486,27 @@ void validarProduto(Produto& novoProduto) {
 }
 
 void adicionarProduto(){
-    limparTela();
     exibirMenu();
     Produto novoProduto;
     validarProduto(novoProduto); 
     produtos.push_back(novoProduto); 
     salvarEstoque();
-    limparTela();
     exibirMenu();
     cout << "Produto adicionado com sucesso!\n";
     aguardarEntrada();
 }
 
 void removerProduto(){
-    limparTela();
     exibirMenu();
     int indice = obterIndiceValido(produtos.size()); 
     produtos.erase(produtos.begin() + indice); 
     salvarEstoque();
-    limparTela();
     exibirMenu();
     cout << "Produto removido com sucesso!\n";
     aguardarEntrada();
 }
 
 void alterarProduto(){
-    limparTela();
     exibirMenu();
     int indice = obterIndiceValido(produtos.size()); 
     Produto& produto = produtos[indice]; 
@@ -582,7 +568,7 @@ void menuAdministrativo(){
                 alterarProduto();
                 break;
             case 4:
-                cout << "Saindo da área administrativa...\n";
+                cout << "Saindo da area administrativa...\n";
                 return; 
             default:
                 cout << "Opcao invalida: \n";
