@@ -9,9 +9,28 @@
 #include <algorithm>
 using namespace std;
 
+
+/**
+ * @brief Vetor global que armazena produtos recebidos.
+ */
 vector<Produto> produtos; 
+
+/**
+ * @brief Vetor global que armazena o estoque original de produtos.
+ */
 vector<Produto> estoqueOriginal; 
 
+
+/**
+ * @brief Recebe produtos de um servidor e os armazena em vetores.
+ *
+ * Esta função recebe uma lista de produtos via socket e armazena
+ * as informações nos vetores fornecidos.
+ *
+ * @param clienteSocket Socket do cliente conectado ao servidor.
+ * @param produtos Vetor onde os produtos recebidos serão armazenados.
+ * @param estoqueOriginal Vetor onde o estoque original será armazenado.
+ */
 void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Produto>& estoqueOriginal) {
     int numeroDeProdutos;
     if (recv(clienteSocket, (char*)&numeroDeProdutos, sizeof(int), 0) == SOCKET_ERROR) {
@@ -42,7 +61,7 @@ void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Pro
         nomeBuffer[nomeTamanho] = '\0'; 
         produto.nome = string(nomeBuffer.data());
 
-        // Recebe preço e quantidade
+        
         if (recv(clienteSocket, (char*)&produto.precoPorKg, sizeof(produto.precoPorKg), 0) == SOCKET_ERROR ||
             recv(clienteSocket, (char*)&produto.quantidadeKg, sizeof(produto.quantidadeKg), 0) == SOCKET_ERROR ||
             recv(clienteSocket, (char*)&produto.precoPorUnidade, sizeof(produto.precoPorUnidade), 0) == SOCKET_ERROR ||
@@ -58,7 +77,15 @@ void receberProdutos(SOCKET clienteSocket, vector<Produto>& produtos, vector<Pro
     }
 }
 
-// Função para obter a data e hora formatada
+/**
+ * @brief Obtém a data e hora atuais formatadas.
+ *
+ * A função formata a data e hora no formato "dd/mm/aaaa hh:mm:ss" e
+ * armazena no buffer fornecido.
+ *
+ * @param buffer Ponteiro para o array onde a data e hora serão armazenadas.
+ * @param tamanho Tamanho máximo do buffer.
+ */
 void obterDataHora(char *buffer, size_t tamanho) {
     time_t t; 
     struct tm *tm_info; 
@@ -68,17 +95,39 @@ void obterDataHora(char *buffer, size_t tamanho) {
     strftime(buffer, tamanho, "%d/%m/%Y %H:%M:%S", tm_info); 
 }
 
+/**
+ * @brief Valida se uma string representa um inteiro.
+ *
+ * @param entrada A string a ser validada.
+ * @return true Se a string é um número inteiro válido.
+ * @return false Se a string não é um número inteiro válido.
+ */
 bool inteiroValido(const string& entrada) {
     if (entrada.empty()) return false; 
     return all_of(entrada.begin(), entrada.end(), ::isdigit); 
 }
 
+/**
+ * @brief Valida se uma string contém apenas letras e espaços.
+ *
+ * @param entrada A string a ser validada.
+ * @return true se a string é válida.
+ * @return false se a string é inválida.
+ */
 bool stringValida(const string& entrada) {
     return !entrada.empty() && all_of(entrada.begin(), entrada.end(), [](unsigned char c) {
         return isalpha(c) || isspace(c);
     });
 }
 
+/**
+ * @brief Valida se uma string representa um número decimal.
+ *
+ * @param entrada A string a ser validada.
+ * @param saida Variável onde o valor decimal é armazenado, se válido.
+ * @return true Se a string é um número decimal válido.
+ * @return false Se a string não é um número decimal válido.
+ */
 bool floatValido(const string& entrada, float& saida) {
     if (entrada.empty()) return false;
 
@@ -110,16 +159,29 @@ bool floatValido(const string& entrada, float& saida) {
     return true;
 }
 
+/**
+ * @brief Altera a cor do texto e do fundo no console.
+ *
+ * @param corTexto Código da cor do texto.
+ * @param corFundo Código da cor de fundo (opcional, padrão é 0).
+ */
 void mudaCor(int corTexto, int corFundo) {
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
     SetConsoleTextAttribute(hConsole, corTexto | (corFundo << 4));
 }
 
-// Função para limpar a tela do console
+/**
+ * @brief Limpa a tela do console.
+ */
 void limparTela() {
     system("cls"); 
 }
 
+/**
+ * @brief Salva o estoque de produtos em um arquivo.
+ *
+ * Os dados dos produtos são escritos no arquivo "estoque.txt".
+ */
 void salvarEstoque() {
     ofstream arquivo("estoque.txt");
     if (!arquivo) {
@@ -137,6 +199,13 @@ void salvarEstoque() {
     arquivo.close();
 }
 
+/**
+ * @brief Obtém uma opção válida dentro de um intervalo.
+ *
+ * @param min Valor mínimo da opção.
+ * @param max Valor máximo da opção.
+ * @return int é a opção escolhida pelo usuário.
+ */
 int obterOpcaoValida(int min, int max) {
     string verificaOpcao;
     int opcao;
@@ -153,6 +222,15 @@ int obterOpcaoValida(int min, int max) {
     }
 }
 
+/**
+ * @brief Calcula o desconto baseado na forma de pagamento.
+ *
+ * @param total O valor total da compra.
+ * @param opcao A opção de pagamento escolhida.
+ * @param desconto Referência para armazenar o valor do desconto calculado.
+ * @param totalComDesconto Referência para armazenar o total com desconto.
+ * @param tipoPagamento Referência para armazenar o tipo de pagamento.
+ */
 void calcularDesconto(float total, int opcao, float& desconto, float& totalComDesconto, string& tipoPagamento) {
     desconto = 0.0; 
     totalComDesconto = total; 
@@ -169,7 +247,9 @@ void calcularDesconto(float total, int opcao, float& desconto, float& totalComDe
     totalComDesconto -= desconto; 
 }
 
-// Função para exibir o menu de produtos
+/**
+ * @brief Exibe o menu de produtos.
+ */
 void exibirMenu() {
     limparTela();
     mudaCor(1); 
@@ -202,17 +282,32 @@ void exibirMenu() {
     cout << "=========================================================================================================\n";
 }
 
+/**
+ * @brief Seleciona um produto do menu.
+ *
+ * @return int é o número do produto selecionado pelo usuário.
+ */
 int selecionaProduto(){
     exibirMenu();
     cout << "Digite o numero do produto: ";
     int opcao = obterOpcaoValida(1, produtos.size()); 
 }
 
+/**
+ * @brief Cancela a compra e restaura o estoque original.
+ *
+ * @param estoqueOriginal Vetor que armazena o estoque original.
+ */
 void cancelarCompra(vector<Produto>& estoqueOriginal){
     produtos = estoqueOriginal; 
     salvarEstoque(); 
 }
 
+/**
+ * @brief Obtém a opção de compra (por kg ou unidade).
+ *
+ * @return int é a opção escolhida pelo usuário.
+ */
 int opcaoCompra(){
     cout << "=========================================================================================================\n";
     mudaCor(1, 6);
@@ -226,6 +321,16 @@ int opcaoCompra(){
     int opcao = obterOpcaoValida(1, 2);
 }
 
+/**
+ * @brief Valida a quantidade de produtos solicitados.
+ *
+ * @param formaCompra Indica se a compra é por kg ou unidade.
+ * @param verificaQuantidade String com a quantidade fornecida pelo usuário.
+ * @param quantidade Referência para armazenar a quantidade válida.
+ * @param escolha Índice do produto selecionado.
+ * @return true se a quantidade é válida.
+ * @return false se a quantidade é inválida.
+ */
 bool validarQuantidade(int formaCompra, const string& verificaQuantidade, float& quantidade, int escolha) {
     if (formaCompra == 1) { 
         if (floatValido(verificaQuantidade, quantidade)) {
@@ -247,6 +352,11 @@ bool validarQuantidade(int formaCompra, const string& verificaQuantidade, float&
     return false; 
 }
 
+/**
+ * @brief Exibe mensagem de estoque insuficiente e retorna uma opção.
+ *
+ * @return int é a opção escolhida pelo usuário.
+ */
 int estoqueInsuficiente(){
     cout << "Estoque insuficiente\n";
     cout << " 1 - Deseja tentar novamente\n";
@@ -256,6 +366,13 @@ int estoqueInsuficiente(){
     return obterOpcaoValida(1, 2);
 }
 
+/**
+ * @brief Obtém a quantidade de produtos solicitados.
+ *
+ * @param formaCompra Indica se a compra é por kg ou unidade.
+ * @param escolha Índice do produto selecionado.
+ * @return float a quantidade solicitada pelo usuário.
+ */
 float obterQuantidade(int formaCompra, int escolha) {
     string verificaQuantidade; 
     float quantidade = 0.0;
@@ -282,6 +399,15 @@ float obterQuantidade(int formaCompra, int escolha) {
     }
 }
 
+/**
+ * @brief Atualiza o carrinho de compras com o produto selecionado.
+ *
+ * @param carrinho Vetor onde os produtos comprados são armazenados.
+ * @param formaCompra Indica se a compra é por kg ou unidade.
+ * @param quantidade A quantidade do produto a ser adicionada.
+ * @param escolha Índice do produto selecionado.
+ * @param total Referência para armazenar o total acumulado da compra.
+ */
 void atualizarCarrinho(vector<Produto>& carrinho, int formaCompra, float quantidade, int escolha, float& total) {
     if (formaCompra == 1) { 
         total += produtos[escolha - 1].precoPorKg * quantidade;
@@ -314,6 +440,11 @@ void atualizarCarrinho(vector<Produto>& carrinho, int formaCompra, float quantid
     cout << "Adicionou ao carrinho " << quantidade << (formaCompra == 1 ? " kg" : " unidades") << " de " << produtos[escolha - 1].nome << "\n";
 }
 
+/**
+ * @brief Pergunta ao usuário se deseja continuar comprando.
+ *
+ * @return int é a opção escolhida pelo usuário.
+ */
 int continuarComprando() {
     cout << "=========================================================================================================\n";
     cout << "1 - Deseja adicionar mais produtos  \n";
@@ -323,7 +454,14 @@ int continuarComprando() {
     int opcao = obterOpcaoValida(1, 3);
 }
 
-// Função para selecionar o método de pagamento
+/**
+ * @brief Seleciona o método de pagamento e calcula descontos.
+ *
+ * @param total O valor total da compra.
+ * @param desconto Referência para armazenar o desconto calculado.
+ * @param totalComDesconto Referência para armazenar o total com desconto.
+ * @param tipoPagamento Referência para armazenar o tipo de pagamento.
+ */
 void selecionarMetodoPagamento(float total, float& desconto, float& totalComDesconto, string& tipoPagamento) {
     limparTela(); 
     cout << "=========================================================================================================\n";
@@ -340,6 +478,9 @@ void selecionarMetodoPagamento(float total, float& desconto, float& totalComDesc
     calcularDesconto(total, opcao, desconto, totalComDesconto, tipoPagamento);
 }
 
+/**
+ * @brief Aguarda a entrada do usuário antes de voltar ao menu.
+ */
 void aguardarEntrada(){
     cout << "Pressione qualquer tecla para voltar ao menu...\n";
     cin.ignore(); 
@@ -347,6 +488,12 @@ void aguardarEntrada(){
     limparTela();
 }
 
+/**
+ * @brief Finaliza a compra e exibe a nota fiscal.
+ *
+ * @param carrinho Vetor que contém os produtos comprados.
+ * @param total O valor total da compra.
+ */
 void finalizarCompra(const vector<Produto>& carrinho, float total) {
     if (carrinho.empty()) {
         cout << "Nenhum item adicionado ao carrinho.\n";
@@ -361,7 +508,6 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
 
     limparTela();
 
-   
     char dataHora[20]; 
     obterDataHora(dataHora, sizeof(dataHora)); 
     mudaCor(6);
@@ -391,6 +537,12 @@ void finalizarCompra(const vector<Produto>& carrinho, float total) {
     aguardarEntrada();
 }
 
+/**
+ * @brief Realiza o processo de compra de produtos.
+ *
+ * @param servidorSocket Socket do servidor para comunicação.
+ * @param produtos Vetor com os produtos disponíveis para compra.
+ */
 void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     limparTela(); 
     vector<Produto> carrinho; 
@@ -423,8 +575,17 @@ void realizarCompra(SOCKET servidorSocket, vector<Produto>& produtos) {
     }
 }
 
+/**
+ * @brief Obtém um índice válido do produto a partir da entrada do usuário.
+ * 
+ * Essa função solicita ao usuário que informe um índice para um produto
+ * e verifica se o índice está dentro do intervalo válido (1 a tamanho).
+ * 
+ * @param tamanho O número total de produtos disponíveis.
+ * @return int O índice válido do produto (base 0).
+ */
 int obterIndiceValido(int tamanho){
-     string verificaOpcao;
+    string verificaOpcao;
     int indice;
     while (true) { 
         cout << "Informe o indice do produto (1 a " << tamanho << "): ";
@@ -442,12 +603,20 @@ int obterIndiceValido(int tamanho){
     }
 }
 
+/**
+ * @brief Valida as informações de um novo produto.
+ * 
+ * Solicita ao usuário informações sobre o novo produto e valida cada entrada,
+ * incluindo o nome, preço por kg, preço por unidade, quantidade em kg e quantidade em unidades.
+ * 
+ * @param novoProduto Referência ao produto a ser validado.
+ */
 void validarProduto(Produto& novoProduto) {
     string entrada;
     // Validação do nome do produto
     do {
         cout << "Informe o nome do produto: ";
-        cin.ignore(); // Limpa o buffer
+        cin.ignore(); 
         getline(cin, novoProduto.nome);
         if (!stringValida(novoProduto.nome)) {
             cout << "Nome do produto invalido: " << endl;
@@ -493,6 +662,11 @@ void validarProduto(Produto& novoProduto) {
     novoProduto.quantidadeUnidade = stoi(entrada);
 }
 
+/**
+ * @brief Adiciona um novo produto à lista de produtos.
+ * 
+ * Exibe o menu, valida as informações do novo produto e o adiciona à lista.
+ */
 void adicionarProduto(){
     exibirMenu();
     Produto novoProduto;
@@ -504,6 +678,11 @@ void adicionarProduto(){
     aguardarEntrada();
 }
 
+/**
+ * @brief Remove um produto da lista.
+ * 
+ * Exibe o menu e solicita ao usuário um índice para remover o produto correspondente.
+ */
 void removerProduto(){
     exibirMenu();
     int indice = obterIndiceValido(produtos.size()); 
@@ -514,6 +693,11 @@ void removerProduto(){
     aguardarEntrada();
 }
 
+/**
+ * @brief Altera as informações de um produto existente.
+ * 
+ * Exibe o menu, solicita um índice e valida as novas informações do produto.
+ */
 void alterarProduto(){
     exibirMenu();
     int indice = obterIndiceValido(produtos.size()); 
@@ -524,6 +708,11 @@ void alterarProduto(){
     aguardarEntrada();
 }
 
+/**
+ * @brief Verifica a senha do administrador.
+ * 
+ * Solicita que o usuário insira a senha correta para acessar a área administrativa.
+ */
 void verificarSenha(){
     limparTela();
     const string senhaCorreta = "admin123"; 
@@ -547,6 +736,11 @@ void verificarSenha(){
     }
 }
 
+/**
+ * @brief Exibe o menu administrativo para gerenciamento de produtos.
+ * 
+ * Após a validação da senha, o menu permite adicionar, remover ou alterar produtos.
+ */
 void menuAdministrativo(){
     verificarSenha();
     limparTela();
@@ -585,7 +779,13 @@ void menuAdministrativo(){
     }
 }
 
-// Função que exibe o menu principal
+/**
+ * @brief Exibe o menu principal do sistema.
+ * 
+ * Permite ao usuário realizar uma compra, acessar a área administrativa ou encerrar o caixa.
+ * 
+ * @param clienteSocket Socket do cliente para comunicação.
+ */
 void menuPrincipal(SOCKET clienteSocket) {
     while (true) {
         limparTela(); 

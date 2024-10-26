@@ -3,6 +3,16 @@
 #include <iostream>
 using namespace std;
 
+/**
+ * @brief Inicializa o socket para comunicação.
+ * 
+ * Esta função configura o Winsock e cria um socket TCP para o cliente.
+ * 
+ * @return O SOCKET criado e pronto para uso.
+ * 
+ * @note Em caso de falha na inicialização ou criação do socket, o programa
+ * encerra a execução.
+ */
 SOCKET inicializarSocket() {
     WSADATA wsaData;
     SOCKET clienteSocket;
@@ -22,18 +32,29 @@ SOCKET inicializarSocket() {
     return clienteSocket;
 }
 
-// Função para conectar ao servidor
+/**
+ * @brief Conecta o socket do cliente a um servidor.
+ * 
+ * Esta função configura as informações do servidor e tenta estabelecer
+ * uma conexão com ele.
+ * 
+ * @param clienteSocket O socket do cliente a ser conectado.
+ * @param servidorAddr Estrutura que contém as informações do servidor,
+ * incluindo endereço IP e porta.
+ * 
+ * @note Se a conexão falhar, o programa é encerrado.
+ */
 void conectarServidor(SOCKET clienteSocket, struct sockaddr_in& servidorAddr) {
-    servidorAddr.sin_family = AF_INET; // Define a família de endereços
-    servidorAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); // IP do servidor (localhost)
-    servidorAddr.sin_port = htons(PORTA); // Porta do servidor
-    // Tenta conectar ao servidor
+    servidorAddr.sin_family = AF_INET; 
+    servidorAddr.sin_addr.s_addr = inet_addr("127.0.0.1"); 
+    servidorAddr.sin_port = htons(PORTA); 
+
     cout << "Tentando conectar ao servidor...\n";
     if (connect(clienteSocket, (struct sockaddr*)&servidorAddr, sizeof(servidorAddr)) == SOCKET_ERROR) {
         cout << "Erro ao conectar ao servidor. Codigo de erro: " << WSAGetLastError() << "\n";
-        closesocket(clienteSocket); // Fecha o socket em caso de erro
-        WSACleanup(); // Limpa a Winsock
-        exit(1); // Encerra o programa
+        closesocket(clienteSocket); 
+        WSACleanup();
+        exit(1); 
     }
-    cout << "Conectado ao servidor.\n"; // Mensagem de conexão bem-sucedida
+    cout << "Conectado ao servidor.\n"; 
 }
