@@ -92,7 +92,7 @@ void iniciarServidor() {
         return; 
     }
 
-    cout << "Aguardando conexões...\n"; 
+    cout << "Aguardando conexoes...\n"; 
 
     SOCKET clienteSocket = aceitarConexao(servidorSocket);
     if (clienteSocket == INVALID_SOCKET) {
@@ -101,7 +101,7 @@ void iniciarServidor() {
         return; 
     }
 
-    cout << "Cliente conectado. Processando conexão...\n"; 
+    cout << "Cliente conectado. Processando conexao...\n"; 
     processarConexao(clienteSocket); 
 
     closesocket(clienteSocket);
