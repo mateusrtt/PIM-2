@@ -1,5 +1,7 @@
 #include "sockets.h"
 #include "servidor.h"
+#include <iostream> 
+using namespace std;
 
 SOCKET configurarServidor() {
     WSADATA wsaData;

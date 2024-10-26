@@ -1,5 +1,7 @@
 #include "sockets.h"
 #include "cliente.h"
+#include <iostream>
+using namespace std;
 
 SOCKET inicializarSocket() {
     WSADATA wsaData;

@@ -1,5 +1,10 @@
 #include "servidor.h"
 #include "sockets.h"
+#include <iostream> 
+#include <cstring> 
+#include <fstream>
+#include <sstream>
+using namespace std;
 
 vector<Produto> produtos;
 vector<Produto> estoqueOriginal;

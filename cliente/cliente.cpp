@@ -1,5 +1,13 @@
 #include "cliente.h"
 #include "sockets.h"
+#include <iostream>
+#include <cstring>
+#include <ctime>
+#include <iomanip>
+#include <fstream>
+#include <cctype>
+#include <algorithm>
+using namespace std;
 
 vector<Produto> produtos; 
 vector<Produto> estoqueOriginal; 
