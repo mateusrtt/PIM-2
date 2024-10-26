@@ -3,6 +3,17 @@
 #include <iostream> 
 using namespace std;
 
+/**
+ * @brief Configura o servidor para aceitar conexões.
+ * 
+ * Esta função inicializa a biblioteca Winsock, cria um socket
+ * do tipo TCP e configura o endereço do servidor para ouvir
+ * conexões na porta definida. Se ocorrer algum erro durante
+ * a inicialização, criação ou configuração do socket, a função
+ * retornará INVALID_SOCKET.
+ * 
+ * @return SOCKET do servidor configurado ou INVALID_SOCKET em caso de erro.
+ */
 SOCKET configurarServidor() {
     WSADATA wsaData;
     SOCKET servidorSocket;
@@ -39,6 +50,16 @@ SOCKET configurarServidor() {
     return servidorSocket;
 }
 
+/**
+ * @brief Aceita uma conexão de um cliente.
+ * 
+ * Esta função aguarda e aceita uma conexão de um cliente
+ * usando o socket do servidor. Se a aceitação da conexão falhar,
+ * a função exibirá um erro, mas continuará a execução do programa.
+ * 
+ * @param servidorSocket O socket do servidor que está ouvindo as conexões.
+ * @return SOCKET do cliente conectado ou INVALID_SOCKET em caso de erro.
+ */
 SOCKET aceitarConexao(SOCKET servidorSocket) {
     struct sockaddr_in clienteAddr;
     int clienteAddrLen = sizeof(clienteAddr);

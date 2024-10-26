@@ -6,9 +6,17 @@
 #include <sstream>
 using namespace std;
 
+// Vetores globais para armazenar produtos e estoque original.
 vector<Produto> produtos;
 vector<Produto> estoqueOriginal;
 
+/**
+ * @brief Carrega o estoque de produtos a partir de um arquivo.
+ * 
+ * O arquivo "estoque.txt" é lido e os produtos são armazenados
+ * no vetor `produtos`. Se o arquivo não for encontrado, uma mensagem
+ * de erro é exibida.
+ */
 void carregarEstoque() {
     FILE *arquivo = fopen("estoque.txt", "r");
     if (arquivo == nullptr) {
@@ -35,6 +43,15 @@ void carregarEstoque() {
     fclose(arquivo);
 }
 
+/**
+ * @brief Envia a lista de produtos para o cliente.
+ * 
+ * A quantidade de produtos e suas informações (nome, preço por kg,
+ * quantidade em kg, preço por unidade e quantidade em unidades) são
+ * enviadas através do socket.
+ * 
+ * @param clienteSocket O socket do cliente para o qual os produtos são enviados.
+ */
 void enviarProdutos(SOCKET clienteSocket) {
     int numeroDeProdutos = produtos.size();
     send(clienteSocket, (char*)&numeroDeProdutos, sizeof(numeroDeProdutos), 0);
@@ -50,10 +67,25 @@ void enviarProdutos(SOCKET clienteSocket) {
     }
 }
 
+/**
+ * @brief Processa a conexão com o cliente.
+ * 
+ * Após a conexão ser aceita, esta função chama `enviarProdutos` para
+ * enviar a lista de produtos ao cliente.
+ * 
+ * @param clienteSocket O socket do cliente conectado.
+ */
 void processarConexao(SOCKET clienteSocket) {
     enviarProdutos(clienteSocket); 
 }
 
+/**
+ * @brief Inicia o servidor e aguarda conexões.
+ * 
+ * O servidor é configurado e aguarda conexões de clientes. Quando um
+ * cliente se conecta, a conexão é processada e a lista de produtos
+ * é enviada.
+ */
 void iniciarServidor() {
     SOCKET servidorSocket = configurarServidor();
     if (servidorSocket == INVALID_SOCKET) {
