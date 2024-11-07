@@ -358,7 +358,7 @@ bool validarQuantidade(int formaCompra, const string& verificaQuantidade, float&
  * @return int é a opção escolhida pelo usuário.
  */
 int estoqueInsuficiente(){
-    cout << "Estoque insuficiente\n";
+    cout << "Opcao invalida\n";
     cout << " 1 - Deseja tentar novamente\n";
     cout << " 2 - Voltar ao menu de produtos?\n";
     cout << "=========================================================================================================\n";

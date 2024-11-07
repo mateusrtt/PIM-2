@@ -8,7 +8,6 @@ using namespace std;
 
 // Vetores globais para armazenar produtos e estoque original.
 vector<Produto> produtos;
-vector<Produto> estoqueOriginal;
 
 /**
  * @brief Carrega o estoque de produtos a partir de um arquivo.
@@ -18,29 +17,29 @@ vector<Produto> estoqueOriginal;
  * de erro é exibida.
  */
 void carregarEstoque() {
-    FILE *arquivo = fopen("estoque.txt", "r");
-    if (arquivo == nullptr) {
+    ifstream arquivo("estoque.txt");  
+    if (!arquivo.is_open()) {
         cout << "Arquivo de estoque não encontrado\n";
         return;
     }
 
-    produtos.clear();
-    Produto temp;
-    char linhaBuffer[300];
+    produtos.clear();  
+    Produto temp;      
+    char linhaBuffer[300];  
 
-    while (fgets(linhaBuffer, sizeof(linhaBuffer), arquivo)) {
+    while (arquivo.getline(linhaBuffer, sizeof(linhaBuffer))) {
         linhaBuffer[strcspn(linhaBuffer, "\n")] = 0;
+
         char nome[50];
         if (sscanf(linhaBuffer, "%49[^-] - R$ %f por kg - R$ %f por unidade - Quantidade: %f kg - Quantidade Unidades: %d",
             nome, &temp.precoPorKg, &temp.precoPorUnidade, &temp.quantidadeKg, &temp.quantidadeUnidade) == 5) {
-            temp.nome = nome;
-            produtos.push_back(temp);
+            temp.nome = nome; 
+            produtos.push_back(temp); 
         } else {
             cout << "Falha ao analisar a linha: " << linhaBuffer << endl;
         }
     }
-    estoqueOriginal = produtos;
-    fclose(arquivo);
+    arquivo.close();  
 }
 
 /**
